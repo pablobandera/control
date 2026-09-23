@@ -1,0 +1,3174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="format-detection" content="telephone=no">
+<title>AppJuan — Prototipo funcional</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<style>
+  html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  *{ box-sizing:border-box; }
+  html, body{
+    margin:0; padding:0; min-height:100%;
+    font-family:'Inter',sans-serif;
+    background:#d8d6ce;
+    overflow-x:hidden;
+  }
+
+  /* ---------------------------------- */
+  /* shared shell                        */
+  /* ---------------------------------- */
+  .screen{
+    width:100%; max-width:480px; min-height:100vh; min-height:100dvh; margin:0 auto;
+    background:linear-gradient(155deg, #e4e4e1 0%, #ecdfa9 55%, #f3d24e 100%);
+    position:relative; overflow:hidden;
+    display:none;
+  }
+  .screen.active{ display:block; }
+  .content{ padding:18px 18px 100px; }
+
+  @media (max-width: 360px){
+    .content{ padding:14px 14px 100px; }
+    .title{ font-size:28px; }
+    .stats-row{ gap:7px; }
+    .stat-box{ padding:10px 7px; }
+    .stat-box .val{ font-size:13px; }
+    .quickadd{ gap:5px; }
+  }
+
+  .top-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:26px; }
+  .nav-pill{
+    background:#eceae0; border:none; border-radius:999px; height:42px; padding:0 16px;
+    display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:#4a4a47; cursor:pointer;
+    box-shadow:0 4px 10px rgba(0,0,0,0.04); white-space:nowrap;
+  }
+  .nav-pill i{ font-size:15px; }
+  .icon-circle.has-dot{ position:relative; }
+  .icon-circle.has-dot .dot-badge{
+    position:absolute; top:6px; right:7px; width:8px; height:8px; border-radius:50%;
+    background:#f3d24e; border:2px solid #fff;
+  }
+  .icon-circle{
+    width:42px; height:42px; border-radius:50%; background:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:16px; color:#1c1c1c;
+    box-shadow:0 4px 10px rgba(0,0,0,0.06); border:none; cursor:pointer; flex-shrink:0;
+  }
+  .icon-circle.logout{ color:#c9483d; }
+  .logout-pill{
+    background:#fdeceb; color:#c9483d; border:1.5px solid #f1b8b3; border-radius:999px;
+    height:42px; padding:0 14px; display:flex; align-items:center; gap:6px;
+    font-size:12.5px; font-weight:700; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.05); white-space:nowrap;
+  }
+  .logout-pill svg{ width:16px; height:16px; flex-shrink:0; }
+  .logout-pill:active{ transform:scale(0.97); }
+  .right-icons{ display:flex; align-items:center; gap:10px; }
+  .export-pill{
+    background:#1c1c1c; border-radius:999px; padding:0 16px; height:42px;
+    display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:#fff;
+    box-shadow:0 4px 10px rgba(0,0,0,0.06); border:none; cursor:pointer; white-space:nowrap;
+  }
+
+  .title{ font-family:'Poppins',sans-serif; font-weight:500; font-size:32px; color:#1c1c1c; margin:0 0 4px; }
+  .subtitle{ font-size:13px; color:#6b6b68; margin:0 0 18px; }
+
+  .filter-row-wrap{ display:flex; align-items:center; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+  .filter-row{ display:flex; gap:6px; flex:1 1 auto; margin-bottom:0; }
+  .filter-row button{
+    flex:1; padding:10px 0; border-radius:14px; border:none; font-size:12.5px; font-weight:600; cursor:pointer;
+    background:#fff; color:#6b6b68; box-shadow:0 4px 10px rgba(0,0,0,0.05);
+  }
+  .filter-row button.active{ background:#1c1c1c; color:#fff; }
+
+  .month-picker{
+    display:none; align-items:center; gap:8px; padding:9px 14px; border-radius:14px;
+    background:#fff; box-shadow:0 4px 10px rgba(0,0,0,0.05); color:#1c1c1c; flex-shrink:0;
+  }
+  .month-picker select{
+    border:none; background:transparent; font-family:'Inter'; font-size:12.5px; font-weight:600; color:#1c1c1c;
+    cursor:pointer; appearance:none; -webkit-appearance:none; padding-right:2px;
+  }
+
+  .stats-row{ display:flex; gap:10px; margin-bottom:20px; }
+  .stat-box{ flex:1; border-radius:20px; padding:12px 10px; text-align:center; }
+  .stat-box .lbl{ font-size:10.5px; font-weight:600; margin:0 0 4px; }
+  .stat-box .val{ font-family:'Poppins'; font-weight:700; font-size:15px; margin:0; }
+  .stat-box .breakdown{ font-size:9px; margin:5px 0 0; line-height:1.5; }
+  .stat-box.taxi{ background:#1c1c1c; }
+  .stat-box.taxi .lbl{ color:#9a9a9a; }
+  .stat-box.taxi .val{ color:#2fa85a; }
+  .stat-box.taxi .breakdown{ color:#8a8a8a; }
+  .stat-box.uber{ background:#f3d24e; }
+  .stat-box.uber .lbl{ color:#6b5c14; }
+  .stat-box.uber .val{ color:#3a2f05; }
+  .stat-box.uber .breakdown{ color:#6b5c14; }
+  .stat-box.turno, .stat-box.viajes{ background:transparent; padding:0; text-align:left; display:flex; flex-direction:column; }
+  .stat-box.turno .lbl, .stat-box.viajes .lbl{ font-size:11px; color:#6b6b68; font-weight:500; margin:0 0 8px; padding-left:2px; }
+  .pill-outline-box{
+    border:1.5px solid #1c1c1c; border-radius:999px; background:transparent;
+    display:flex; align-items:center; justify-content:center; height:52px;
+  }
+  .pill-outline-box .val{ font-family:'Poppins'; font-weight:700; font-size:15px; color:#1c1c1c; margin:0; }
+
+  .quickadd{ display:flex; gap:6px; margin-bottom:18px; flex-wrap:wrap; }
+  .quickadd select, .quickadd input{
+    border:none; border-radius:16px; background:#fff; padding:12px 10px; font-size:16px; font-weight:500; color:#1c1c1c;
+    box-shadow:0 4px 10px rgba(0,0,0,0.06);
+  }
+  .quickadd select:nth-of-type(1){ flex:0 0 84px; }
+  .quickadd input{ flex:1 1 90px; min-width:0; }
+  .quickadd select:nth-of-type(2){ flex:0 0 126px; }
+  .quickadd button{
+    background:#1c1c1c; color:#fff; border:none; border-radius:16px; padding:0 16px; font-weight:600; font-size:16px; cursor:pointer;
+  }
+
+  .section-lbl{ font-size:13px; font-weight:600; margin:4px 2px 10px; color:#1c1c1c; }
+
+  .discount-toggle{ font-size:12px; font-weight:600; color:#4d64d9; margin:0 2px 14px; cursor:pointer; display:inline-block; }
+  .discount-box{ display:none; margin:-6px 0 16px; }
+  .discount-box.open{ display:block; }
+  .discount-box input{
+    width:100%; border:none; border-radius:16px; background:#fff; padding:12px 14px; font-size:16px; font-weight:500; color:#c9483d;
+    box-shadow:0 4px 10px rgba(0,0,0,0.06);
+  }
+
+  .action-card{
+    background:#faf7ee; border-radius:26px; padding:20px 20px 22px; margin-bottom:18px;
+    box-shadow:0 10px 24px rgba(0,0,0,0.08);
+  }
+  .tipo-toggle{
+    position:relative; display:flex; background:rgba(0,0,0,0.05); border-radius:14px; padding:4px; margin-bottom:12px;
+  }
+  .tipo-toggle-bg{
+    position:absolute; top:4px; left:4px; width:calc(50% - 4px); height:calc(100% - 8px);
+    background:#1c1c1c; border-radius:10px; transition:transform 0.28s cubic-bezier(.4,0,.2,1); z-index:0;
+  }
+  .tipo-toggle-btn{
+    flex:1; position:relative; z-index:1; border:none; background:transparent; padding:11px 0;
+    font-size:14px; font-weight:600; color:#6b6b68; cursor:pointer; transition:color 0.28s;
+  }
+  .tipo-toggle-btn.active{ color:#fff; }
+  .confirm-btn{
+    width:100%; background:#f3d24e; color:#1c1c1c; border:none; border-radius:16px; padding:14px 0;
+    font-size:15px; font-weight:700; cursor:pointer; margin-top:2px;
+  }
+  .confirm-btn:active{ transform:scale(0.98); }
+
+  .service-card{
+    background:#1c1c1c; border-radius:22px; padding:18px 18px 16px; margin-bottom:18px;
+    box-shadow:0 8px 18px rgba(0,0,0,0.1);
+  }
+  .service-card-title{ font-family:'Poppins'; font-weight:700; font-size:13px; letter-spacing:0.08em; color:#f3d24e; margin:0 0 4px; }
+  .service-card-sub{ font-size:11.5px; color:#9a9a96; margin:0 0 12px; }
+  .service-card textarea{
+    width:100%; min-height:74px; border:none; border-radius:14px; background:rgba(255,255,255,0.08); padding:12px 14px;
+    font-size:16px; font-family:'Inter'; color:#fff; resize:none;
+  }
+  .service-card textarea::placeholder{ color:#7a7a76; }
+  .service-save-btn{
+    margin-top:12px; width:100%; border:none; border-radius:14px; padding:11px 0;
+    background:#f3d24e; color:#1c1c1c; font-weight:700; font-size:13px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:7px;
+  }
+  .service-save-btn.saved{ background:#2fa85a; color:#fff; }
+
+  .card-stack{ display:flex; flex-direction:column; gap:14px; }
+  .card{
+    background:#faf7ee; border-radius:26px; padding:20px 20px 22px;
+    position:relative;
+    box-shadow:0 10px 24px rgba(0,0,0,0.06);
+  }
+
+  .card-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; gap:8px; }
+  .card-person{ display:flex; align-items:center; gap:14px; min-width:0; }
+  .avatar.icon{
+    width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:'Poppins'; font-weight:700; font-size:14px; color:#fff; flex-shrink:0;
+  }
+  .avatar.icon.taxi{ background:#2fa85a; }
+  .avatar.icon.uber{ background:#4d64d9; }
+  .p-name{ font-family:'Poppins'; font-weight:500; font-size:20px; color:#1c1c1c; margin:0; }
+  .p-role{ font-size:13.5px; color:#8a8a86; margin:2px 0 0; }
+  .card.selected .p-role{ color:#7a4a1f; }
+
+  .status-pill{
+    display:flex; align-items:center; gap:7px; padding:8px 14px; border-radius:999px; font-size:12.5px; font-weight:500;
+    background:#eeeeea; color:#5a5a56; white-space:nowrap; flex-shrink:0;
+  }
+  .status-pill .dot{ width:7px; height:7px; border-radius:50%; }
+  .status-pill.en-servicio .dot{ background:#2fa85a; animation: pulseDot 1.6s ease-in-out infinite; }
+  .status-pill.fuera-servicio .dot{ background:#e2544c; }
+  @keyframes pulseDot{
+    0%, 100%{ opacity:1; box-shadow:0 0 0 0 rgba(47,168,90,0.45); }
+    50%{ opacity:0.3; box-shadow:0 0 0 5px rgba(47,168,90,0); }
+  }
+
+  .seg-block{ margin-bottom:14px; }
+  .seg-labels-row{ display:flex; justify-content:space-between; margin-bottom:7px; }
+  .seg-labels-row .seg-lbl{ font-family:'Poppins'; font-weight:600; font-size:14px; }
+  .seg-labels-row .seg-lbl .n{ font-family:'Inter'; font-weight:500; font-size:11px; opacity:0.7; margin-left:3px; }
+  .seg-bar-2{ display:flex; height:8px; border-radius:4px; overflow:hidden; background:#eceae0; }
+  .card.selected .seg-bar-2{ background:rgba(0,0,0,0.08); }
+  .seg-a{ background:#f3d24e; }
+  .seg-b{ background:#1c1c1c; }
+  .seg-total{ font-size:11.5px; color:#9a9a96; margin:8px 0 0; }
+  .card.selected .seg-total{ color:#7a4a1f; }
+  .seg-total b{ color:#1c1c1c; font-weight:700; }
+  .card.selected .seg-total b{ color:#1c1c1c; }
+
+  .fuel-card{ display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.035); border-radius:22px; padding:8px 14px 8px 8px; }
+  .card.selected .fuel-card{ background:rgba(255,255,255,0.55); }
+  .fuel-info{ flex:1; min-width:0; }
+  .fuel-row{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+  .rendir-badge{
+    display:flex; justify-content:space-between; align-items:center;
+    background:rgba(47,168,90,0.13); border-radius:14px; padding:10px 14px; margin:2px 0 10px;
+  }
+  .rendir-badge .lbl{ font-size:11.5px; font-weight:600; color:#1c1c1c; }
+  .rendir-badge .val{ font-family:'Poppins'; font-weight:700; font-size:16px; color:#2fa85a; }
+  .card.selected .rendir-badge{ background:rgba(255,255,255,0.55); }
+  .card.selected .rendir-badge .val{ color:#1c7a3f; }
+  .fuel-row .lbl{ font-size:12.5px; font-weight:600; color:#1c1c1c; }
+  .fuel-row .val{ font-size:11.5px; font-weight:600; color:#9a9a96; }
+  .card.selected .fuel-row .val{ color:#7a4a1f; }
+  .fuel-track{
+    position:relative; height:5px; border-radius:3px;
+    background-image:repeating-linear-gradient(90deg, #d8d6cc 0 2px, transparent 2px 6px);
+  }
+  .card.selected .fuel-track{ background-image:repeating-linear-gradient(90deg, rgba(0,0,0,0.14) 0 2px, transparent 2px 6px); }
+  .fuel-fill{ position:absolute; left:0; top:0; height:100%; border-radius:3px; background:#f3d24e; }
+
+  .card-bottom{ display:flex; align-items:center; justify-content:space-between; margin-top:6px; }
+  .card-bottom .lbl{ font-size:11.5px; color:#9a9a96; margin:0 0 3px; }
+  .card.selected .card-bottom .lbl{ color:#7a4a1f; }
+  .card-bottom .val{ font-size:13.5px; font-weight:700; color:#1c1c1c; margin:0; }
+
+  .card{ cursor:pointer; }
+  .card-summary{ display:flex; align-items:center; justify-content:center; }
+  .stadium-wrap{ width:100%; }
+  .stadium-labels{ display:flex; margin-bottom:6px; }
+  .stadium-labels span{ font-size:10.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .stadium-bar{ display:flex; height:34px; border-radius:17px; overflow:hidden; }
+  .stadium-seg{ height:100%; }
+  .stadium-seg.taxi{ background:#f3d24e; border-right:2px solid #faf7ee; }
+  .stadium-seg.uber{ background:#1c1c1c; border-right:2px solid #faf7ee; }
+  .stadium-seg.viajes{ background:#9a9a96; }
+  .card.selected .stadium-seg.taxi, .card.selected .stadium-seg.uber{ border-right-color:#f2975a; }
+  .card.selected{ background:#f2975a; z-index:5; }
+
+  .card-detail{ display:none; margin-top:14px; }
+  .card-detail.open{ display:block; }
+
+  .checkbox{ width:22px; height:22px; border-radius:50%; border:1.5px solid #d8d8d3; flex-shrink:0; }
+
+  /* ---- chofer specific ---- */
+  .card.selected.simple{ background:#f3d24e; }
+  .card-data{ display:flex; justify-content:space-between; margin-bottom:6px; }
+  .data-col .lbl{ font-size:11px; color:#9a9a96; display:block; margin-bottom:4px; }
+  .card.selected.simple .data-col .lbl{ color:#6b5c14; }
+  .data-col .val{ font-size:14px; font-weight:600; color:#1c1c1c; }
+  .comment-link{ font-size:12px; font-weight:600; color:#4d64d9; margin:10px 0 0; cursor:pointer; display:inline-block; }
+  .card.selected.simple .comment-link{ color:#3a2f05; }
+  .comment-box{ display:none; margin-top:8px; }
+  .comment-box.open{ display:block; }
+  .comment-box textarea{
+    width:100%; border:none; border-radius:12px; background:rgba(0,0,0,0.04); padding:10px 12px;
+    font-size:16px; font-family:'Inter'; color:#1c1c1c; resize:none; min-height:46px;
+  }
+  .card.selected.simple .comment-box textarea{ background:rgba(255,255,255,0.45); }
+
+  /* ---- bottom nav ---- */
+  .bottom-nav{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:16px;
+    width:calc(100% - 28px); max-width:452px;
+    background:#1c1c1c; padding:9px 10px;
+    border-radius:26px;
+    display:flex; justify-content:space-between; align-items:center;
+    box-shadow:0 10px 24px rgba(0,0,0,0.28);
+    z-index:40;
+  }
+  .nav-item{ display:flex; flex-direction:column; align-items:center; gap:1px; color:#8a8a86; flex:1; cursor:pointer; padding:3px 0; }
+  .nav-item i{ font-size:16px; }
+  .nav-item svg{ width:16px; height:16px; }
+  .nav-item span{ font-size:7.5px; font-weight:600; }
+  .nav-item.active{ color:#f3d24e; }
+
+  /* ---- pre-turno / estados chofer ---- */
+  .chofer-state{ display:none; }
+  .chofer-state.active{ display:block; }
+  .preturno-wrap{ text-align:center; padding-top:70px; }
+  .preturno-icon{
+    width:76px; height:76px; border-radius:24px; background:#1c1c1c; color:#f3d24e;
+    display:flex; align-items:center; justify-content:center; font-size:32px; margin:0 auto 24px;
+    box-shadow:0 10px 24px rgba(0,0,0,0.15);
+  }
+  .start-turno-btn{
+    background:#1c1c1c; color:#fff; border:none; border-radius:18px; padding:18px 28px;
+    font-family:'Poppins'; font-weight:600; font-size:16px; cursor:pointer; display:inline-flex;
+    align-items:center; gap:10px; box-shadow:0 8px 20px rgba(0,0,0,0.15);
+  }
+  .start-turno-btn:active{ transform:scale(0.98); }
+
+  .chofer-view, .dueno-view{ display:none; }
+  .chofer-view.active, .dueno-view.active{ display:block; }
+
+  /* ---- historial ---- */
+  .hist-card{
+    background:#faf7ee; border-radius:22px; padding:16px 18px; box-shadow:0 8px 18px rgba(0,0,0,0.05);
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;
+  }
+  .hist-card .hist-date{ font-family:'Poppins'; font-weight:600; font-size:14.5px; color:#1c1c1c; margin:0 0 3px; }
+  .hist-card .hist-sub{ font-size:11.5px; color:#9a9a96; margin:0; }
+  .hist-card .hist-total{ font-family:'Poppins'; font-weight:700; font-size:15px; color:#2fa85a; text-align:right; margin:0; }
+  .hist-card .hist-viajes{ font-size:10.5px; color:#9a9a96; text-align:right; margin:2px 0 0; }
+
+  /* ---- perfil ---- */
+  .profile-card{ background:#faf7ee; border-radius:26px; padding:26px 22px; box-shadow:0 10px 24px rgba(0,0,0,0.06); text-align:center; }
+  .profile-avatar{
+    width:84px; height:84px; border-radius:50%; margin:0 auto 14px; object-fit:cover; display:block;
+    box-shadow:0 6px 16px rgba(0,0,0,0.12);
+  }
+  .profile-name{ font-family:'Poppins'; font-weight:600; font-size:19px; color:#1c1c1c; margin:0 0 3px; }
+  .profile-role{ font-size:12.5px; color:#9a9a96; margin:0 0 20px; }
+  .profile-avatar-wrap{ position:relative; width:84px; margin:0 auto 14px; }
+  .profile-avatar-wrap .profile-avatar{ margin:0; }
+  .profile-avatar-edit-btn{
+    position:absolute; bottom:-2px; right:-2px; width:28px; height:28px; border-radius:50%; background:#1c1c1c; color:#f3d24e;
+    border:2px solid #faf7ee; display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .profile-grid{ display:flex; flex-wrap:wrap; gap:10px; text-align:left; }
+  .profile-item{ flex:1 1 calc(50% - 5px); background:rgba(0,0,0,0.03); border-radius:16px; padding:12px 14px; }
+  .profile-item .lbl{ font-size:10.5px; color:#9a9a96; margin:0 0 4px; display:block; }
+  .profile-item .val{ font-family:'Poppins'; font-weight:600; font-size:14px; color:#1c1c1c; margin:0; }
+
+  /* ---- reportes ---- */
+  .report-kpis{ display:flex; gap:10px; margin-bottom:22px; }
+  .report-kpi{ flex:1; background:#faf7ee; border-radius:18px; padding:14px 12px; text-align:center; box-shadow:0 8px 18px rgba(0,0,0,0.05); }
+  .report-kpi .lbl{ font-size:10.5px; color:#9a9a96; margin:0 0 6px; }
+  .report-kpi .val{ font-family:'Poppins'; font-weight:700; font-size:16px; color:#1c1c1c; margin:0; }
+  .report-kpi .kpi-breakdown{ font-size:9px; color:#9a9a96; margin:5px 0 0; line-height:1.5; }
+  .chart-card{ background:#faf7ee; border-radius:22px; padding:20px 18px; box-shadow:0 8px 18px rgba(0,0,0,0.05); margin-bottom:14px; }
+  .chart-card .chart-title{ font-size:13px; font-weight:600; color:#1c1c1c; margin:0 0 16px; }
+  .bar-chart{ display:flex; align-items:flex-end; gap:8px; height:110px; padding-top:34px; position:relative; }
+  .bar-chart::before{ content:''; position:absolute; left:0; right:0; top:56px; border-top:1.5px dotted #d3cfa1; }
+  .bar-chart .bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; position:relative; z-index:1; }
+  .bar-chart .bar{ width:46%; border-radius:8px 8px 3px 3px; background:#1c1c1c; }
+  .bar-chart .bar.peak{ background:#f3d24e; }
+  .bar-chart .bar-lbl{ font-size:9.5px; color:#9a9a96; margin-top:6px; }
+  .ranking-row{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.05); }
+  .ranking-row:last-child{ border-bottom:none; }
+  .ranking-name{ font-size:13px; font-weight:600; color:#1c1c1c; }
+  .ranking-val{ font-size:13px; font-weight:700; color:#2fa85a; }
+
+  /* ---- asistente: informe y chat ---- */
+  .report-card{ background:#faf7ee; border-radius:22px; padding:18px 18px 16px; box-shadow:0 8px 18px rgba(0,0,0,0.05); margin-bottom:14px; }
+  .report-card .report-head{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .report-card .report-icon{ width:30px; height:30px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+  .report-card.good .report-icon{ background:rgba(47,168,90,0.15); color:#2fa85a; }
+  .report-card.bad .report-icon{ background:rgba(226,84,76,0.15); color:#e2544c; }
+  .report-card.tips .report-icon{ background:rgba(77,100,217,0.15); color:#4d64d9; }
+  .report-card .report-head-title{ font-family:'Poppins'; font-weight:600; font-size:14.5px; color:#1c1c1c; margin:0; }
+  .report-item{ display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.05); }
+  .report-item:last-child{ border-bottom:none; }
+  .report-item .report-bullet{
+    width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:700; flex-shrink:0; margin-top:1px;
+  }
+  .report-card.good .report-bullet{ background:#2fa85a; color:#fff; }
+  .report-card.bad .report-bullet{ background:#e2544c; color:#fff; }
+  .report-card.tips .report-bullet{ background:#4d64d9; color:#fff; font-size:9.5px; }
+  .report-item p{ font-size:12.5px; color:#4a4a47; line-height:1.5; margin:0; }
+
+  /* ---- combustible: gauge ---- */
+  .gauge-card{ text-align:center; }
+  .gauge-wrap{ position:relative; width:180px; height:180px; margin:6px auto 2px; }
+  .gauge-ring{ width:100%; height:100%; border-radius:50%; }
+  .gauge-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .gauge-center .amount{ font-family:'Poppins'; font-weight:700; font-size:22px; color:#1c1c1c; margin:0; }
+  .gauge-center .status{ font-size:11.5px; color:#9a9a96; margin:5px 0 0; }
+
+  /* ---- facturación: barras efectivo / transferencia ---- */
+  .progress-total{ font-family:'Poppins'; font-weight:700; font-size:26px; color:#1c1c1c; margin:0; }
+  .progress-sub{ font-size:11px; color:#9a9a96; margin:4px 0 18px; }
+  .progress-bars{ display:flex; align-items:flex-end; gap:10px; height:130px; position:relative; padding-top:34px; }
+  .progress-bar-col{ flex:1; display:flex; flex-direction:column-reverse; align-items:center; height:100%; position:relative; }
+  .progress-bar-stack{ width:100%; display:flex; flex-direction:column-reverse; border-radius:6px 6px 3px 3px; overflow:hidden; }
+  .progress-seg-efvo{ background:#1c1c1c; width:100%; }
+  .progress-seg-transf{ background:#f3d24e; width:100%; }
+  .progress-bar-lbl{ font-size:9.5px; color:#9a9a96; margin-top:6px; }
+  .progress-tooltip{
+    position:absolute; top:-4px; left:50%; transform:translateX(-50%);
+    background:#f3d24e; color:#3a2f05; font-size:10.5px; font-weight:700; padding:5px 10px; border-radius:999px; white-space:nowrap;
+  }
+  .progress-legend{ display:flex; gap:16px; justify-content:center; margin-top:16px; }
+  .progress-legend span{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:#6b6b68; }
+  .progress-legend .dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+  /* ---- taxi / uber: ring ---- */
+  .ring-card{ text-align:center; }
+  .ring-wrap{ position:relative; width:160px; height:160px; margin:6px auto 18px; }
+  .ring{ width:100%; height:100%; border-radius:50%; }
+  .ring-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .ring-center .amount{ font-family:'Poppins'; font-weight:700; font-size:18px; color:#1c1c1c; margin:0; }
+  .ring-center .label{ font-size:10px; color:#9a9a96; margin:4px 0 0; }
+  .ring-legend{ display:flex; gap:10px; justify-content:center; }
+  .ring-chip{ flex:1; max-width:160px; background:rgba(0,0,0,0.03); border-radius:16px; padding:10px 12px; display:flex; align-items:center; gap:8px; text-align:left; }
+  .ring-chip .dot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .ring-chip .txt .name{ font-size:10px; color:#9a9a96; margin:0; }
+  .ring-chip .txt .val{ font-family:'Poppins'; font-weight:700; font-size:12.5px; color:#1c1c1c; margin:1px 0 0; }
+
+  /* ---- combustible: tarjeta estilo perfil + barra segmentada ---- */
+  .fuel-card-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:26px; }
+  .fuel-card-person{ display:flex; align-items:center; gap:12px; }
+  .fuel-avatar{
+    width:46px; height:46px; border-radius:50%; background:#1c1c1c; color:#f3d24e;
+    display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;
+  }
+  .fuel-card-name{ font-family:'Poppins'; font-weight:600; font-size:16px; color:#1c1c1c; margin:0; }
+  .fuel-card-role{ font-size:12px; color:#9a9a96; margin:2px 0 0; }
+  .fuel-arrow-btn{
+    width:36px; height:36px; border-radius:50%; background:#fff; border:none; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.06);
+  }
+  .fuel-seg-labels{ display:flex; justify-content:space-between; margin-bottom:8px; }
+  .fuel-seg-labels span{ font-size:13px; font-weight:600; color:#1c1c1c; }
+  .fuel-seg-bar{ display:flex; height:10px; border-radius:6px; overflow:hidden; }
+  .fuel-seg-a{ background:#f3d24e; height:100%; }
+  .fuel-seg-b{ background:#1c1c1c; height:100%; }
+  .fuel-seg-c{
+    height:100%;
+    background-image: repeating-linear-gradient(-45deg, #cfcfc7 0 2px, transparent 2px 7px);
+    background-color: rgba(0,0,0,0.06);
+  }
+
+  /* ---- facturación: cápsulas tipo termómetro ---- */
+  .capsule-row{ display:flex; gap:10px; justify-content:space-between; }
+  .capsule-col{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .capsule{
+    width:14px; height:100px; border-radius:999px; position:relative; overflow:hidden;
+    background-image: repeating-linear-gradient(-45deg, #d8d6cc 0 2px, transparent 2px 7px);
+    background-color: rgba(0,0,0,0.05);
+  }
+  .capsule-fill{ position:absolute; bottom:0; left:0; width:100%; background:#f3d24e; border-radius:999px; }
+  .capsule-lbl{ font-size:9.5px; color:#9a9a96; }
+
+  /* ---- combustible: tarjeta oscura tipo gráfico de línea ---- */
+  .combustible-dark-card{ background:#1c1c1c; border-radius:26px; padding:22px 20px 18px; }
+  .dark-card-header{ display:flex; justify-content:space-between; align-items:center; }
+  .dark-card-title{ font-family:'Poppins'; font-weight:600; font-size:15px; color:#fff; margin:0; }
+  .dark-card-sub{ font-size:11px; color:#9a9a96; }
+  .dark-chart-wrap{ position:relative; height:100px; margin:36px 0 4px; }
+  .dark-line-svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .dark-tooltip{
+    position:absolute; transform:translate(-50%,-135%);
+    background:#fff; color:#1c1c1c; font-size:11px; font-weight:700; padding:6px 12px; border-radius:999px; white-space:nowrap;
+    box-shadow:0 4px 10px rgba(0,0,0,0.3);
+  }
+  .dark-chart-labels{ display:flex; justify-content:space-between; margin-top:6px; }
+  .dark-chart-labels span{ font-size:10px; color:#7a7a76; flex:1; text-align:center; }
+  .dark-chart-labels span.peak-lbl{ background:rgba(255,255,255,0.14); color:#fff; border-radius:999px; padding:3px 9px; font-weight:700; }
+
+  /* ---- descuentos: tarjeta naranja con línea ondulada ---- */
+  .descuentos-card{ background:#f2975a; }
+  .descuentos-title{ font-family:'Poppins'; font-weight:600; font-size:15px; color:#1c1c1c; margin:0 0 4px; }
+  .descuentos-chart-wrap{ position:relative; height:64px; margin:34px 0 4px; }
+  .descuentos-line-svg{ width:100%; height:100%; display:block; overflow:visible; }
+  .descuentos-chart-labels{ display:flex; justify-content:space-between; margin-top:6px; }
+  .descuentos-chart-labels span{ font-size:10px; color:#7a4a1f; flex:1; text-align:center; }
+  .descuentos-chart-labels span.peak-lbl{ background:#1c1c1c; color:#fff; border-radius:999px; padding:3px 9px; font-weight:700; }
+  .descuentos-pct-row{ display:flex; align-items:baseline; gap:8px; margin-top:14px; }
+  .descuentos-pct{ font-family:'Poppins'; font-weight:700; font-size:34px; color:#1c1c1c; }
+  .descuentos-pct-label{ font-size:12.5px; color:#7a4a1f; }
+  .descuentos-monto{ font-size:11.5px; color:#7a4a1f; margin:6px 0 0; }
+
+  /* ---- modal propio (reemplaza confirm nativo) ---- */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(28,28,28,0.55);
+    align-items:center; justify-content:center; z-index:100; padding:24px;
+  }
+  .modal-overlay.active{ display:flex; }
+  .modal-card{
+    background:#faf7ee; border-radius:24px; padding:24px 22px; width:100%; max-width:300px;
+    box-shadow:0 16px 40px rgba(0,0,0,0.3);
+    max-height:85vh; display:flex; flex-direction:column;
+  }
+  .modal-scroll-area{ overflow-y:auto; flex:1; min-height:0; margin:0 -6px; padding:0 6px; }
+  .modal-title{ font-family:'Poppins'; font-weight:600; font-size:17px; color:#1c1c1c; margin:0 0 16px; flex-shrink:0; }
+  .modal-row{ display:flex; justify-content:space-between; font-size:13px; color:#6b6b68; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.06); }
+  .modal-row:last-child{ border-bottom:none; }
+  .modal-row b{ color:#1c1c1c; font-weight:700; }
+  .modal-row-block{ padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.06); }
+  .modal-row-block .modal-row{ padding:0; border:none; }
+  .modal-row-block .modal-subrow{ font-size:11px; color:#9a9a96; margin:4px 0 0; }
+  .modal-actions{ display:flex; gap:10px; margin-top:16px; flex-shrink:0; }
+  .modal-btn{
+    flex:1; border:none; border-radius:14px; padding:12px 0; font-weight:600; font-size:13.5px; cursor:pointer;
+  }
+  .modal-btn.secondary{ background:rgba(0,0,0,0.06); color:#4a4a47; }
+  .modal-btn.primary{ background:#1c1c1c; color:#fff; }
+  .modal-input{
+    width:100%; border:none; border-radius:14px; background:rgba(0,0,0,0.05); padding:14px 16px;
+    font-size:16px; font-family:'Inter'; color:#1c1c1c; margin-top:2px;
+  }
+  .modal-error{ display:none; font-size:11.5px; color:#c9483d; margin:8px 2px 0; }
+  .modal-error.show{ display:block; }
+
+  .modal-mini-filter{ display:flex; gap:6px; margin-bottom:14px; flex-shrink:0; }
+  .modal-mini-filter button{
+    flex:1; border:none; border-radius:10px; padding:7px 0; font-size:12px; font-weight:600;
+    background:rgba(0,0,0,0.05); color:#6b6b68; cursor:pointer;
+  }
+  .modal-mini-filter button.active{ background:#1c1c1c; color:#fff; }
+  .modal-back-link{ font-size:12px; font-weight:600; color:#4d64d9; margin:0 0 10px; cursor:pointer; display:inline-block; flex-shrink:0; }
+  .modal-list-row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.06); cursor:pointer; }
+  .modal-list-row:last-child{ border-bottom:none; }
+  .modal-list-row .row-avatar{ width:34px; height:34px; border-radius:50%; background:rgba(0,0,0,0.08); flex-shrink:0; object-fit:cover; }
+  .modal-list-row .row-avatar.square{ border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#6b6b68; }
+  .modal-list-row .row-info{ flex:1; min-width:0; }
+  .modal-list-row .row-info .row-name{ font-size:13px; font-weight:600; color:#1c1c1c; margin:0; }
+  .modal-list-row .row-info .row-sub{ font-size:11px; color:#9a9a96; margin:2px 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .modal-list-row .row-val{ font-size:14px; font-weight:700; color:#2fa85a; flex-shrink:0; text-align:right; }
+  .modal-list-row .row-chev{ color:#9a9a96; font-size:16px; flex-shrink:0; }
+  .service-entry{ padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.06); }
+  .service-entry:last-child{ border-bottom:none; }
+  .service-entry .service-entry-date{ font-size:12px; font-weight:600; color:#1c1c1c; margin:0 0 2px; }
+  .service-entry .service-entry-text{ font-size:12px; color:#6b6b68; margin:0; }
+  .comprobantes-strip{ display:flex; gap:6px; margin:8px 0 0; }
+  .comprobantes-strip .strip-thumb{ width:40px; height:40px; border-radius:8px; background:rgba(255,255,255,0.12); flex-shrink:0; }
+
+  .flota-list-card{ background:#faf7ee; border-radius:26px; padding:18px 20px 20px; margin-top:16px; box-shadow:0 10px 24px rgba(0,0,0,0.08); }
+  .flota-list-title{ font-family:'Poppins'; font-weight:600; font-size:15px; color:#1c1c1c; margin:0 0 12px; }
+  .flota-row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.06); cursor:pointer; }
+  .flota-row:last-of-type{ border-bottom:none; }
+  .flota-row-avatar{ width:38px; height:38px; border-radius:50%; object-fit:cover; flex-shrink:0; background:rgba(0,0,0,0.08); }
+  .flota-row-info{ flex:1; min-width:0; }
+  .flota-row-info .flota-row-name{ font-size:13px; font-weight:600; color:#1c1c1c; margin:0; }
+  .flota-row-info .flota-row-phone{ font-size:11px; color:#9a9a96; margin:2px 0 0; }
+  .btn-agregar-chofer{
+    width:100%; margin-top:14px; background:#1c1c1c; color:#fff; border:none; border-radius:14px; padding:12px 0;
+    font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;
+  }
+  .chofer-form-avatar{ width:72px; height:72px; border-radius:50%; object-fit:cover; background:rgba(0,0,0,0.08); display:block; }
+
+  .ticket-foto-box{ margin-top:14px; background:rgba(0,0,0,0.04); border-radius:16px; padding:14px; }
+  .ticket-foto-title{ font-size:12px; font-weight:700; color:#1c1c1c; margin:0 0 2px; }
+  .ticket-foto-sub{ font-size:11px; color:#9a9a96; margin:0 0 10px; }
+  .ticket-foto-btn{
+    width:100%; background:#1c1c1c; color:#f3d24e; border:none; border-radius:12px; padding:11px 0;
+    font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;
+  }
+  .ticket-foto-btn.tomada{ background:#2fa85a; color:#fff; }
+  .ticket-foto-thumb{ width:100%; max-height:170px; object-fit:cover; border-radius:12px; margin-top:10px; cursor:pointer; }
+
+  .fotos-reloj-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+  .fotos-reloj-grid:not(:empty){ margin-bottom:10px; }
+  .foto-reloj-item{ position:relative; }
+  .foto-reloj-item img{ width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; display:block; cursor:pointer; }
+  .foto-reloj-remove{
+    position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%; background:#c9483d; color:#fff;
+    border:none; font-size:11px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.25);
+  }
+
+  .edit-viaje-btn{
+    height:28px; padding:0 12px; border-radius:999px; background:rgba(77,100,217,0.12); border:none;
+    display:flex; align-items:center; gap:5px; color:#4d64d9; font-size:11.5px; font-weight:700; cursor:pointer; flex-shrink:0;
+  }
+  #viajes-stack .card.simple{ cursor:pointer; }
+  #cc-stack .card.simple{ cursor:pointer; }
+
+  /* ---------------------------------- */
+  /* login screen                        */
+  /* ---------------------------------- */
+  #screen-login .content{
+    min-height:100vh; min-height:100dvh; padding:40px 28px; display:flex; flex-direction:column;
+  }
+  .login-top{ flex:1; display:flex; flex-direction:column; justify-content:center; }
+  .login-badge{
+    width:64px; height:64px; border-radius:20px; background:#1c1c1c;
+    display:flex; align-items:center; justify-content:center; margin-bottom:26px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.15);
+  }
+  .login-badge i{ color:#f3d24e; font-size:28px; }
+  .login-title{ font-family:'Poppins'; font-weight:600; font-size:34px; color:#1c1c1c; margin:0 0 8px; line-height:1.1; }
+  .login-subtitle{ font-size:14px; color:#6b6b68; margin:0 0 40px; line-height:1.5; }
+  .role-label{ font-size:12px; font-weight:600; color:#6b6b68; text-transform:uppercase; letter-spacing:0.06em; margin:0 0 12px; }
+  .role-btn{
+    width:100%; border:none; border-radius:20px; padding:20px 22px; margin-bottom:14px;
+    display:flex; align-items:center; gap:16px; cursor:pointer; text-align:left;
+    box-shadow:0 8px 20px rgba(0,0,0,0.08); transition:transform .15s ease;
+  }
+  .role-btn:active{ transform:scale(0.98); }
+  .role-btn .role-icon{
+    width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .role-btn .role-icon i{ font-size:22px; }
+  .role-btn .role-text .name{ font-family:'Poppins'; font-weight:600; font-size:18px; margin:0; }
+  .role-btn .role-text .desc{ font-size:12px; margin:2px 0 0; opacity:0.75; }
+  .role-btn .role-arrow{ margin-left:auto; font-size:18px; opacity:0.4; }
+
+  .role-btn.chofer{ background:#1c1c1c; color:#fff; }
+  .role-btn.chofer .role-icon{ background:#2fa85a; }
+  .role-btn.chofer .role-icon i{ color:#fff; }
+
+  .role-btn.dueno{ background:#faf7ee; color:#1c1c1c; }
+  .role-btn.dueno .role-icon{ background:#f3d24e; }
+  .role-btn.dueno .role-icon i{ color:#3a2f05; }
+
+  .login-footer{ text-align:center; font-size:11.5px; color:#8a8a86; margin-top:10px; }
+
+  /* ---------------------------------- */
+  /* dueño: escritorio (desktop)         */
+  /* ---------------------------------- */
+  .only-desktop{ display:none; }
+
+  .liquidacion-flota-card{ background:#1c1c1c; }
+  .liquidacion-stats{ display:flex; gap:14px; flex-wrap:wrap; margin-top:2px; }
+  .liquidacion-stat{ flex:1 1 150px; min-width:150px; }
+  .liquidacion-stat .lbl{ font-size:11.5px; color:#9a9a96; margin:0 0 8px; font-weight:500; }
+  .liquidacion-stat .val{ font-family:'Poppins'; font-weight:600; font-size:21px; color:#fff; margin:0; }
+  .liquidacion-stat.destacado{
+    background:rgba(243,210,78,0.14); border-radius:16px; padding:14px 16px; margin:-14px 0;
+  }
+  .liquidacion-stat.destacado .lbl{ color:#f3d24e; }
+  .liquidacion-stat.destacado .val{ color:#f3d24e; font-size:25px; }
+
+  .sidebar-brand{
+    align-items:center; gap:10px; padding:4px 14px 24px; margin-bottom:12px;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+  }
+  .sidebar-brand .sidebar-badge{
+    width:38px; height:38px; border-radius:12px; background:#f3d24e; color:#1c1c1c;
+    display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0;
+  }
+  .sidebar-brand .sidebar-txt .name{ font-family:'Poppins'; font-weight:600; font-size:15px; color:#fff; margin:0; }
+  .sidebar-brand .sidebar-txt .role{ font-size:11px; color:#8a8a86; margin:1px 0 0; }
+
+  @media (min-width: 1024px){
+    .only-desktop{ display:block; }
+
+    #screen-dueno{
+      max-width:none; width:100%; overflow:visible;
+    }
+
+    /* sidebar fijo al viewport (no sticky: así nunca se corta al scrollear páginas largas) */
+    #screen-dueno > .content{
+      margin-left:236px;
+      padding:32px 40px 60px;
+    }
+    #screen-dueno .content > .dueno-view{ max-width:1240px; margin:0 auto; }
+
+    #screen-dueno .top-row .nav-pill{ display:none; }
+    #screen-dueno .top-row{ margin-bottom:32px; }
+    #screen-dueno .title{ font-size:30px; }
+
+    .sidebar-brand{ display:flex; }
+
+    #screen-dueno > .bottom-nav{
+      position:fixed; top:0; left:0; bottom:auto; transform:none;
+      width:236px; max-width:236px; height:100vh;
+      border-radius:0; box-shadow:2px 0 30px rgba(0,0,0,0.14);
+      flex-direction:column; align-items:stretch; justify-content:flex-start;
+      gap:4px; padding:26px 16px; overflow-y:auto; z-index:50;
+    }
+    #screen-dueno > .bottom-nav .nav-item{
+      flex-direction:row; justify-content:flex-start; align-items:center;
+      gap:12px; padding:11px 14px; border-radius:12px; flex:none;
+    }
+    #screen-dueno > .bottom-nav .nav-item:hover{ background:rgba(255,255,255,0.06); }
+    #screen-dueno > .bottom-nav .nav-item.active{ background:rgba(243,210,78,0.14); }
+    #screen-dueno > .bottom-nav .nav-item i{ font-size:18px; }
+    #screen-dueno > .bottom-nav .nav-item svg{ width:18px; height:18px; }
+    #screen-dueno > .bottom-nav .nav-item span{ font-size:13px; font-weight:600; }
+
+    /* choferes: grilla de 2 columnas */
+    #screen-dueno .card-stack{ display:grid; grid-template-columns:repeat(2, 1fr); gap:16px; align-items:start; }
+
+    /* reportes: grilla de 3 columnas, liquidación y KPIs ocupan el ancho completo */
+    #reportes-content{ display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; }
+    #reportes-content .report-kpis{ grid-column:1 / -1; margin-bottom:0; }
+    #reportes-content .liquidacion-flota-card{ grid-column:1 / -1; }
+
+    /* asistente: 3 columnas lado a lado en vez de apiladas */
+    #asistente-informe{ display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; align-items:start; }
+
+    /* perfil: datos de Juan + lista de choferes lado a lado */
+    #dueno-perfil-card{ display:grid; grid-template-columns:360px 1fr; gap:20px; align-items:start; }
+
+    /* modales: más grandes y legibles en pantallas anchas */
+    .modal-card{ max-width:540px; padding:32px 34px; border-radius:28px; }
+    .modal-title{ font-size:20px; margin-bottom:20px; }
+    .modal-row{ font-size:14px; padding:11px 0; }
+    .modal-row-block{ padding:11px 0; }
+    .modal-row-block .modal-subrow{ font-size:12px; }
+    .modal-actions{ margin-top:20px; gap:12px; }
+    .modal-btn{ font-size:14.5px; padding:14px 0; border-radius:16px; }
+    .modal-input{ font-size:16px; padding:15px 18px; border-radius:16px; }
+    .modal-mini-filter button{ font-size:13px; padding:9px 0; }
+    .modal-list-row{ padding:13px 0; gap:14px; }
+    .modal-list-row .row-avatar{ width:44px; height:44px; }
+    .modal-list-row .row-name{ font-size:14.5px; }
+    .modal-list-row .row-sub{ font-size:12.5px; }
+    .modal-list-row .row-val{ font-size:15.5px; }
+    .modal-list-row .row-chev{ font-size:19px; }
+    .service-entry{ padding:13px 0; }
+    .service-entry .service-entry-date{ font-size:13px; }
+    .service-entry .service-entry-text{ font-size:13px; }
+    .comprobantes-strip .strip-thumb{ width:54px; height:54px; border-radius:10px; }
+    .chofer-form-avatar{ width:88px; height:88px; }
+
+    /* login: pantalla completa en escritorio, dos columnas en vez de tarjeta mobile */
+    #screen-login{ max-width:none; width:100%; }
+    #screen-login .content{
+      max-width:1180px; margin:0 auto; padding:0 48px;
+      min-height:100vh; min-height:100dvh;
+    }
+    #screen-login .login-top{
+      flex:1; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:100px;
+    }
+    #screen-login .login-brand{ flex:1 1 0; max-width:480px; }
+    #screen-login .login-actions{ flex:1 1 0; max-width:420px; }
+    #screen-login .login-badge{ width:84px; height:84px; border-radius:26px; margin-bottom:32px; }
+    #screen-login .login-badge i{ font-size:36px; }
+    #screen-login .login-title{ font-size:54px; }
+    #screen-login .login-subtitle{ font-size:16px; margin-bottom:0; }
+    #screen-login .login-footer{ margin-top:0; padding-bottom:36px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div class="screen active" id="screen-login">
+  <div class="content">
+    <div class="login-top">
+      <div class="login-brand">
+        <div class="login-badge"><i class="ti ti-car"></i></div>
+        <h1 class="login-title">AppJuan</h1>
+        <p class="login-subtitle">Gestión de flota de taxis y viajes.<br>Elegí cómo querés ingresar.</p>
+      </div>
+      <div class="login-actions">
+        <p class="role-label">Ingresar como</p>
+        <button class="role-btn chofer" data-role="chofer">
+          <div class="role-icon"><i class="ti ti-steering-wheel"></i></div>
+          <div class="role-text">
+            <p class="name">Chofer</p>
+            <p class="desc">Cargar y ver mis viajes del turno</p>
+          </div>
+          <i class="ti ti-chevron-right role-arrow"></i>
+        </button>
+        <button class="role-btn dueno" data-role="dueno">
+          <div class="role-icon"><i class="ti ti-building-store"></i></div>
+          <div class="role-text">
+            <p class="name">Dueño</p>
+            <p class="desc">Ver el dashboard de toda la flota</p>
+          </div>
+          <i class="ti ti-chevron-right role-arrow"></i>
+        </button>
+      </div>
+    </div>
+    <p class="login-footer">Podés cambiar de rol en cualquier momento cerrando sesión</p>
+  </div>
+</div>
+
+<!-- ============ CHOFER ============ -->
+<div class="screen" id="screen-chofer">
+  <div class="content">
+
+    <div class="top-row" style="justify-content:flex-end;">
+      <div class="right-icons">
+        <button class="logout-pill" data-action="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Salir</button>
+        <button class="export-pill" id="btn-finalizar-turno" style="display:none;"><i class="ti ti-player-pause-filled"></i> Finalizar</button>
+      </div>
+    </div>
+
+    <!-- ESTADO: PRE-TURNO -->
+    <div class="chofer-state active" id="chofer-preturno">
+      <div class="preturno-wrap">
+        <div class="preturno-icon"><i class="ti ti-steering-wheel"></i></div>
+        <h1 class="title" style="font-size:26px;">Arrancá tu turno</h1>
+        <p class="subtitle" style="margin-bottom:30px;">Marcos R.<br>Iniciá el turno para empezar a cargar viajes.</p>
+        <button class="start-turno-btn" id="btn-comenzar-turno"><i class="ti ti-player-play-filled"></i> Comenzar turno</button>
+      </div>
+    </div>
+
+    <!-- ESTADO: EN TURNO -->
+    <div class="chofer-state" id="chofer-enturno">
+
+      <!-- VISTA: VIAJES -->
+      <div class="chofer-view active" id="chofer-view-viajes">
+        <h1 class="title">Mis viajes</h1>
+        <p class="subtitle" id="chofer-subtitle">Marcos R. · Móvil #07 · Desde --:--</p>
+
+        <div class="stats-row">
+          <div class="stat-box taxi"><p class="lbl">Taxi</p><p class="val" id="stat-taxi-total">$0</p><p class="breakdown" id="stat-taxi-breakdown">Efvo $0<br>Transf $0</p></div>
+          <div class="stat-box uber"><p class="lbl">Uber</p><p class="val" id="stat-uber-total">$0</p><p class="breakdown" id="stat-uber-breakdown">Efvo $0<br>Transf $0</p></div>
+          <div class="stat-box turno"><p class="lbl">Turno</p><div class="pill-outline-box"><p class="val" id="stat-turno-time">0.0h</p></div></div>
+          <div class="stat-box viajes"><p class="lbl">Viajes</p><div class="pill-outline-box"><p class="val" id="stat-viajes-count">0</p></div></div>
+        </div>
+
+        <div class="action-card">
+          <div class="tipo-toggle" id="tipo-toggle">
+            <div class="tipo-toggle-bg" id="tipo-toggle-bg"></div>
+            <button type="button" class="tipo-toggle-btn active" data-tipo="Taxi">Taxi</button>
+            <button type="button" class="tipo-toggle-btn" data-tipo="Uber">Uber</button>
+          </div>
+          <div class="quickadd" style="margin-bottom:12px;">
+            <input id="input-monto" placeholder="Monto del viaje" inputmode="numeric" style="flex:1.3;">
+            <select id="sel-medio"><option>Efectivo</option><option>Transferencia</option></select>
+          </div>
+          <p class="discount-toggle" id="discount-toggle">+ Agregar descuento a este viaje</p>
+          <div class="discount-box" id="discount-box">
+            <input id="input-descuento" placeholder="Monto del descuento" inputmode="numeric">
+          </div>
+          <button id="btn-agregar-viaje" class="confirm-btn">Confirmar viaje</button>
+        </div>
+
+        <div class="section-lbl">Viajes de hoy</div>
+        <div class="card-stack" id="viajes-stack"></div>
+      </div>
+
+      <!-- VISTA: GASTOS -->
+      <div class="chofer-view" id="chofer-view-gastos">
+        <h1 class="title">Gastos</h1>
+        <p class="subtitle">Anotá lo que gastaste durante el turno</p>
+
+        <div class="quickadd">
+          <input id="input-gasto-concepto" placeholder="¿En qué gastaste?" style="flex:1.4 1 100px;">
+          <input id="input-gasto-monto" placeholder="Monto" inputmode="numeric">
+          <button id="btn-agregar-gasto">+</button>
+        </div>
+
+        <div class="service-card">
+          <p class="service-card-title">SERVICE</p>
+          <p class="service-card-sub">Anotá el desglose del service que le hiciste al auto hoy</p>
+          <textarea id="input-service" placeholder="Ej: cambio de aceite y filtro, pastillas de freno delanteras..."></textarea>
+          <button id="btn-guardar-service" class="service-save-btn">
+            <i class="ti ti-device-floppy" style="font-size:15px;"></i>
+            <span id="btn-guardar-service-txt">Guardar</span>
+          </button>
+        </div>
+
+        <div class="section-lbl">Historial de service</div>
+        <div id="service-historial-list"></div>
+
+        <div class="section-lbl">Gastos de hoy</div>
+        <div class="card-stack" id="gastos-stack"></div>
+      </div>
+
+      <!-- VISTA: CUENTA CORRIENTE -->
+      <div class="chofer-view" id="chofer-view-cc">
+        <h1 class="title">Cuenta corriente</h1>
+        <p class="subtitle">Viajes a clientes que pagan después</p>
+
+        <div class="action-card">
+          <div class="quickadd" style="margin-bottom:8px;">
+            <input id="input-cc-cliente" placeholder="¿Para quién fue el viaje?" style="flex:1.4 1 100px;">
+          </div>
+          <div class="quickadd" style="margin-bottom:12px;">
+            <input id="input-cc-monto" placeholder="Monto" inputmode="numeric">
+          </div>
+          <p class="discount-toggle" id="discount-toggle-cc">+ Agregar descuento a este viaje</p>
+          <div class="discount-box" id="discount-box-cc">
+            <input id="input-cc-descuento" placeholder="Monto del descuento" inputmode="numeric">
+          </div>
+          <button id="btn-agregar-cc" class="confirm-btn">Agregar a Cta Cte</button>
+        </div>
+
+        <div class="section-lbl">Pendientes de cobro</div>
+        <div class="card-stack" id="cc-stack"></div>
+      </div>
+
+      <!-- VISTA: HISTORIAL -->
+      <div class="chofer-view" id="chofer-view-historial">
+        <h1 class="title">Historial</h1>
+        <p class="subtitle">Tus últimos turnos</p>
+
+        <div class="chart-card">
+          <p class="chart-title">Mis comisiones</p>
+          <div class="filter-row" id="comisiones-filter-row" style="margin-bottom:18px;">
+            <button data-period="dia">Día</button>
+            <button class="active" data-period="semana">Semana</button>
+            <button data-period="mes">Mes</button>
+          </div>
+          <div id="comisiones-chart-content"></div>
+        </div>
+
+        <div id="historial-stack"></div>
+      </div>
+
+      <!-- VISTA: PERFIL -->
+      <div class="chofer-view" id="chofer-view-perfil">
+        <h1 class="title">Mi perfil</h1>
+        <p class="subtitle">Datos del chofer</p>
+        <div id="chofer-perfil-card"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="bottom-nav" id="chofer-nav" style="display:none;">
+    <div class="nav-item active" data-view="chofer-view-viajes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11"/><rect x="2" y="11" width="20" height="6" rx="2"/><circle cx="7.5" cy="17.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="16.5" cy="17.5" r="1.3" fill="currentColor" stroke="none"/></svg><span>Viajes</span></div>
+    <div class="nav-item" data-view="chofer-view-gastos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/></svg><span>Gastos</span></div>
+    <div class="nav-item" data-view="chofer-view-cc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg><span>Cta Cte</span></div>
+    <div class="nav-item" data-view="chofer-view-historial"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg><span>Historial</span></div>
+    <div class="nav-item" data-view="chofer-view-perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>Perfil</span></div>
+  </div>
+
+  <div class="modal-overlay" id="movil-modal">
+    <div class="modal-card">
+      <p class="modal-title">¿En qué móvil salís hoy?</p>
+      <input class="modal-input" id="input-movil-modal" type="text" inputmode="numeric" placeholder="Ej: 07">
+      <p class="modal-error" id="movil-modal-error">Ingresá el número de móvil para continuar</p>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" id="btn-cancelar-movil">Cancelar</button>
+        <button class="modal-btn primary" id="btn-confirmar-movil">Comenzar turno</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="finalizar-modal">
+    <div class="modal-card">
+      <p class="modal-title">¿Finalizar el turno?</p>
+      <div class="modal-scroll-area">
+        <div id="finalizar-modal-body"></div>
+
+        <div class="ticket-foto-box">
+          <p class="ticket-foto-title">Tickets / comprobantes</p>
+          <p class="ticket-foto-sub">Sacale una foto a cada ticket que quieras dejar registrado</p>
+          <input type="file" accept="image/*" capture="environment" id="input-foto-reloj" style="display:none;">
+          <div id="fotos-reloj-grid" class="fotos-reloj-grid"></div>
+          <button type="button" id="btn-sacar-foto-reloj" class="ticket-foto-btn">
+            <i class="ti ti-camera" style="font-size:15px;"></i>
+            <span id="btn-sacar-foto-reloj-txt">Agregar foto</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="modal-btn secondary" id="btn-cancelar-finalizar">Cancelar</button>
+        <button class="modal-btn primary" id="btn-confirmar-finalizar">Finalizar turno</button>
+      </div>
+    </div>
+  </div>
+
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="editar-monto-modal">
+    <div class="modal-card">
+      <p class="modal-title">Editar viaje</p>
+      <input class="modal-input" id="input-editar-monto" type="text" inputmode="numeric" placeholder="Monto del viaje">
+      <input class="modal-input" id="input-editar-descuento" type="text" inputmode="numeric" placeholder="Descuento (opcional)" style="margin-top:10px;">
+      <div class="modal-actions">
+        <button class="modal-btn secondary" id="btn-cancelar-editar-monto">Cancelar</button>
+        <button class="modal-btn primary" id="btn-guardar-editar-monto">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- modales compartidos entre chofer y dueño -->
+<div class="modal-overlay" id="ver-turno-modal">
+  <div class="modal-card">
+    <p class="modal-title" id="ver-turno-modal-title">Ticket del turno</p>
+    <div class="modal-scroll-area">
+      <div id="ver-turno-modal-body"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn primary" id="btn-cerrar-ver-turno" style="flex:1;">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="foto-full-modal" style="z-index:110;">
+  <div style="position:relative; width:100%; max-width:360px;">
+    <img id="foto-full-img" style="width:100%; border-radius:16px; display:block;">
+    <button id="btn-cerrar-foto-full" style="position:absolute; top:10px; right:10px; width:34px; height:34px; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; border:none; font-size:15px; cursor:pointer;">✕</button>
+  </div>
+</div>
+
+<!-- ============ DUEÑO / ADMIN ============ -->
+<div class="screen" id="screen-dueno">
+  <div class="content">
+
+    <div class="top-row">
+      <button class="nav-pill"><i class="ti ti-menu-2"></i>Menú</button>
+      <div class="right-icons">
+        <button class="logout-pill" data-action="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Salir</button>
+        <button class="export-pill"><i class="ti ti-download"></i> Export</button>
+      </div>
+    </div>
+
+    <!-- VISTA: CHOFERES -->
+    <div class="dueno-view active" id="dueno-view-choferes">
+    <h1 class="title">Choferes</h1>
+    <p class="subtitle">Hoy, jueves 02 de julio</p>
+
+    <div class="stats-row">
+      <div class="stat-box taxi"><p class="lbl">Taxi</p><p class="val">$97.5k</p><p class="breakdown">Efvo $58k<br>Transf $39.5k</p></div>
+      <div class="stat-box uber"><p class="lbl">Uber</p><p class="val">$60.7k</p><p class="breakdown">Efvo $21k<br>Transf $39.7k</p></div>
+      <div class="stat-box turno"><p class="lbl">Choferes activos</p><div class="pill-outline-box"><p class="val">2/4</p></div></div>
+      <div class="stat-box viajes"><p class="lbl">Viajes hoy</p><div class="pill-outline-box"><p class="val">38</p></div></div>
+    </div>
+
+    <div class="section-lbl">Choferes activos</div>
+    <div class="card-stack">
+
+      <div class="card">
+        <div class="card-top" style="margin-bottom:14px;">
+          <div class="card-person">
+            <img class="avatar" style="width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0;" src="https://i.pravatar.cc/100?img=12" alt="">
+            <div><p class="p-name" style="font-size:16px;">Rodríguez, Marcos</p><p class="p-role">Móvil #07</p></div>
+          </div>
+          <span class="status-pill en-servicio"><span class="dot"></span>En servicio</span>
+        </div>
+        <div class="card-summary">
+          <div class="stadium-wrap">
+            <div class="stadium-labels">
+              <span style="flex:0 0 40%; color:#b8960b;">Taxi $97.5k</span>
+              <span style="flex:0 0 40%; color:#1c1c1c;">Uber $70.7k</span>
+              <span style="color:#7a7a76;">10 viajes</span>
+            </div>
+            <div class="stadium-bar">
+              <div class="stadium-seg taxi" style="width:40%;"></div>
+              <div class="stadium-seg uber" style="width:40%;"></div>
+              <div class="stadium-seg viajes" style="width:20%;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-detail">
+          <div class="seg-block" style="margin-top:6px;">
+            <div class="seg-labels-row">
+              <span class="seg-lbl" style="color:#b8960b;">Efvo $60.1k</span>
+              <span class="seg-lbl" style="color:#1c1c1c;">Transf $108.1k</span>
+            </div>
+            <div class="seg-bar-2"><div class="seg-a" style="width:36%;"></div><div class="seg-b" style="width:64%;"></div></div>
+          </div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Combustible</span><span class="val">$7.400</span></div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Descuentos</span><span class="val" style="color:#c9483d;">-$2.100</span></div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Gastos</span><span class="val" style="color:#c9483d;">-$3.200</span></div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Cuenta corriente</span><span class="val" style="color:#4d64d9;">$0</span></div>
+          <div class="rendir-badge"><span class="lbl">A rendir (después de su 35%)</span><span class="val">$106.1k</span></div>
+          <div class="card-bottom">
+            <div><p class="lbl">Último viaje</p><p class="val">10:05 hs</p></div>
+            <div class="checkbox"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card selected">
+        <div class="card-top" style="margin-bottom:14px;">
+          <div class="card-person">
+            <img class="avatar" style="width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0;" src="https://i.pravatar.cc/100?img=47" alt="">
+            <div><p class="p-name" style="font-size:16px;">Gómez, Pablo</p><p class="p-role">Móvil #12</p></div>
+          </div>
+          <span class="status-pill fuera-servicio" style="background:rgba(255,255,255,0.55);"><span class="dot"></span>Fuera de servicio</span>
+        </div>
+        <div class="card-summary">
+          <div class="stadium-wrap">
+            <div class="stadium-labels">
+              <span style="flex:0 0 38%; color:#6b5c14;">Taxi $61.2k</span>
+              <span style="flex:0 0 42%; color:#1c1c1c;">Uber $91.7k</span>
+              <span style="color:#5c4e0f;">10 viajes</span>
+            </div>
+            <div class="stadium-bar">
+              <div class="stadium-seg taxi" style="width:38%;"></div>
+              <div class="stadium-seg uber" style="width:42%;"></div>
+              <div class="stadium-seg viajes" style="width:20%;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-detail">
+          <div class="seg-block" style="margin-top:6px;">
+            <div class="seg-labels-row">
+              <span class="seg-lbl" style="color:#6b5c14;">Efvo $48.1k</span>
+              <span class="seg-lbl" style="color:#1c1c1c;">Transf $104.8k</span>
+            </div>
+            <div class="seg-bar-2"><div class="seg-a" style="width:31%;"></div><div class="seg-b" style="width:69%;"></div></div>
+          </div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Combustible</span><span class="val">$6.100</span></div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Descuentos</span><span class="val" style="color:#7a4a1f;">-$3.400</span></div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Gastos</span><span class="val" style="color:#7a4a1f;">-$4.500</span></div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Cuenta corriente</span><span class="val" style="color:#3a3a8c;">$0</span></div>
+          <div class="rendir-badge"><span class="lbl">A rendir (después de su 35%)</span><span class="val">$94.9k</span></div>
+          <div class="card-bottom">
+            <div><p class="lbl">Turno cerrado</p><p class="val">Mejor recaudación</p></div>
+            <div class="checkbox" style="background:#1c1c1c; border:none; display:flex; align-items:center; justify-content:center;"><i class="ti ti-check" style="color:#fff; font-size:12px;"></i></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-top" style="margin-bottom:14px;">
+          <div class="card-person">
+            <img class="avatar" style="width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0;" src="https://i.pravatar.cc/100?img=33" alt="">
+            <div><p class="p-name" style="font-size:16px;">Fernández, Iván</p><p class="p-role">Móvil #03</p></div>
+          </div>
+          <span class="status-pill en-servicio"><span class="dot"></span>En servicio</span>
+        </div>
+        <div class="card-summary">
+          <div class="stadium-wrap">
+            <div class="stadium-labels">
+              <span style="flex:0 0 55%; color:#b8960b;">Taxi $121.1k</span>
+              <span style="flex:0 0 25%; color:#1c1c1c;">Uber $20.2k</span>
+              <span style="color:#7a7a76;">10 viajes</span>
+            </div>
+            <div class="stadium-bar">
+              <div class="stadium-seg taxi" style="width:55%;"></div>
+              <div class="stadium-seg uber" style="width:25%;"></div>
+              <div class="stadium-seg viajes" style="width:20%;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-detail">
+          <div class="seg-block" style="margin-top:6px;">
+            <div class="seg-labels-row">
+              <span class="seg-lbl" style="color:#b8960b;">Efvo $89.4k</span>
+              <span class="seg-lbl" style="color:#1c1c1c;">Transf $51.9k</span>
+            </div>
+            <div class="seg-bar-2"><div class="seg-a" style="width:63%;"></div><div class="seg-b" style="width:37%;"></div></div>
+          </div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Combustible</span><span class="val">$9.800</span></div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Descuentos</span><span class="val" style="color:#c9483d;">-$1.800</span></div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Gastos</span><span class="val" style="color:#c9483d;">-$2.800</span></div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Cuenta corriente</span><span class="val" style="color:#4d64d9;">$5.000</span></div>
+          <div class="rendir-badge"><span class="lbl">A rendir (después de su 35%)</span><span class="val">$89.0k</span></div>
+          <div class="card-bottom">
+            <div><p class="lbl">Costos del día</p><p class="val">$51.700</p></div>
+            <div class="checkbox"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card selected">
+        <div class="card-top" style="margin-bottom:14px;">
+          <div class="card-person">
+            <img class="avatar" style="width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0;" src="https://i.pravatar.cc/100?img=25" alt="">
+            <div><p class="p-name" style="font-size:16px;">Silva, Carla</p><p class="p-role">Móvil #15</p></div>
+          </div>
+          <span class="status-pill fuera-servicio" style="background:rgba(255,255,255,0.55);"><span class="dot"></span>Fuera de servicio</span>
+        </div>
+        <div class="card-summary">
+          <div class="stadium-wrap">
+            <div class="stadium-labels">
+              <span style="flex:0 0 32%; color:#b8960b;">Taxi $38.6k</span>
+              <span style="flex:0 0 48%; color:#1c1c1c;">Uber $67.0k</span>
+              <span style="color:#7a7a76;">8 viajes</span>
+            </div>
+            <div class="stadium-bar">
+              <div class="stadium-seg taxi" style="width:32%;"></div>
+              <div class="stadium-seg uber" style="width:48%;"></div>
+              <div class="stadium-seg viajes" style="width:20%;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-detail">
+          <div class="seg-block" style="margin-top:6px;">
+            <div class="seg-labels-row">
+              <span class="seg-lbl" style="color:#b8960b;">Efvo $41.2k</span>
+              <span class="seg-lbl" style="color:#1c1c1c;">Transf $64.4k</span>
+            </div>
+            <div class="seg-bar-2"><div class="seg-a" style="width:39%;"></div><div class="seg-b" style="width:61%;"></div></div>
+          </div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Combustible</span><span class="val">$5.300</span></div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Descuentos</span><span class="val" style="color:#7a4a1f;">-$2.900</span></div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Gastos</span><span class="val" style="color:#7a4a1f;">-$1.900</span></div>
+          <div class="fuel-row" style="padding:0 2px 10px;"><span class="lbl">Cuenta corriente</span><span class="val" style="color:#3a3a8c;">$0</span></div>
+          <div class="rendir-badge"><span class="lbl">A rendir (después de su 35%)</span><span class="val">$66.7k</span></div>
+          <div class="card-bottom">
+            <div><p class="lbl">Último viaje</p><p class="val">09:20 hs</p></div>
+            <div class="checkbox"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    </div>
+    <!-- fin vista Choferes -->
+
+    <!-- VISTA: REPORTES -->
+    <div class="dueno-view" id="dueno-view-reportes">
+      <h1 class="title">Reportes</h1>
+      <p class="subtitle">Análisis de la flota</p>
+      <div class="filter-row-wrap">
+        <div class="filter-row" id="reportes-filter-row">
+          <button class="active" data-period="dia">Día</button>
+          <button data-period="semana">Semana</button>
+          <button data-period="mes">Mes</button>
+        </div>
+        <div id="reportes-month-picker" class="month-picker">
+          <i class="ti ti-calendar" style="font-size:14px;"></i>
+          <select id="sel-reportes-month"></select>
+          <i class="ti ti-chevron-down" style="font-size:13px;"></i>
+        </div>
+      </div>
+      <div id="reportes-content"></div>
+    </div>
+
+    <!-- VISTA: ASISTENTE (dueño) -->
+    <div class="dueno-view" id="dueno-view-asistente">
+      <h1 class="title">Asistente</h1>
+      <p class="subtitle">Análisis de la empresa, hoy</p>
+      <div id="asistente-informe"></div>
+    </div>
+
+    <!-- VISTA: PERFIL (dueño) -->
+    <div class="dueno-view" id="dueno-view-perfil">
+      <h1 class="title">Mi perfil</h1>
+      <p class="subtitle">Datos de la flota</p>
+      <div id="dueno-perfil-card"></div>
+    </div>
+
+  </div>
+
+  <div class="modal-overlay" id="comisiones-modal">
+    <div class="modal-card">
+      <p class="modal-title">Comisiones por chofer</p>
+      <div class="modal-mini-filter" id="comisiones-modal-filter">
+        <button class="active" data-period="dia">Día</button>
+        <button data-period="semana">Semana</button>
+        <button data-period="mes">Mes</button>
+      </div>
+      <div class="modal-scroll-area">
+        <div id="comisiones-modal-body"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn primary" id="btn-cerrar-comisiones" style="flex:1;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="service-modal">
+    <div class="modal-card">
+      <p class="modal-title">Service por móvil</p>
+      <div class="modal-scroll-area">
+        <div id="service-modal-body"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn primary" id="btn-cerrar-service" style="flex:1;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="service-movil-modal">
+    <div class="modal-card">
+      <p class="modal-back-link" id="btn-volver-service-movil">← Volver</p>
+      <p class="modal-title" id="service-movil-modal-title">Móvil</p>
+      <div class="modal-scroll-area">
+        <div id="service-movil-modal-body"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn primary" id="btn-cerrar-service-movil" style="flex:1;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="comprobantes-modal">
+    <div class="modal-card">
+      <p class="modal-title">Comprobantes por chofer</p>
+      <div class="modal-scroll-area">
+        <div id="comprobantes-modal-body"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn primary" id="btn-cerrar-comprobantes" style="flex:1;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="comprobantes-chofer-modal">
+    <div class="modal-card">
+      <p class="modal-back-link" id="btn-volver-comprobantes-chofer">← Volver</p>
+      <p class="modal-title" id="comprobantes-chofer-modal-title">Chofer</p>
+      <div class="modal-scroll-area">
+        <div id="comprobantes-chofer-modal-body"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn primary" id="btn-cerrar-comprobantes-chofer" style="flex:1;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="chofer-form-modal">
+    <div class="modal-card">
+      <p class="modal-title" id="chofer-form-title">Agregar chofer</p>
+      <div class="modal-scroll-area">
+        <div style="display:flex; justify-content:center; margin-bottom:14px;">
+          <img id="preview-chofer-foto" class="chofer-form-avatar" src="">
+        </div>
+        <input type="file" accept="image/*" id="input-chofer-foto" style="display:none;">
+        <button type="button" id="btn-chofer-foto-btn" class="ticket-foto-btn" style="margin-bottom:10px;">
+          <i class="ti ti-camera" style="font-size:15px;"></i>
+          <span id="btn-chofer-foto-txt">Agregar foto (opcional)</span>
+        </button>
+        <input class="modal-input" id="input-chofer-nombre" type="text" placeholder="Nombre y apellido">
+        <input class="modal-input" id="input-chofer-telefono" type="text" placeholder="Teléfono" style="margin-top:10px;">
+        <p class="modal-error" id="chofer-form-error">Completá nombre y teléfono para continuar</p>
+        <p class="modal-back-link" id="btn-eliminar-chofer" style="display:none; color:#c9483d; margin-top:16px;">Eliminar chofer</p>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" id="btn-cancelar-chofer-form">Cancelar</button>
+        <button class="modal-btn primary" id="btn-guardar-chofer-form">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="sidebar-brand only-desktop">
+      <div class="sidebar-badge"><i class="ti ti-car"></i></div>
+      <div class="sidebar-txt"><p class="name">AppJuan</p><p class="role">Panel del dueño</p></div>
+    </div>
+    <div class="nav-item active" data-view="dueno-view-choferes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 17.5V19"/><circle cx="9" cy="8" r="3.2"/><path d="M20 19v-1.3a3.2 3.2 0 0 0-2.2-3"/><path d="M14.3 5a3.2 3.2 0 0 1 0 6.2"/></svg><span>Choferes</span></div>
+    <div class="nav-item" data-view="dueno-view-reportes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="12"/><line x1="12" y1="20" x2="12" y2="5"/><line x1="19" y1="20" x2="19" y2="15"/></svg><span>Reportes</span></div>
+    <div class="nav-item" data-view="dueno-view-asistente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.2L18 9l-4.4 1.8L12 15l-1.6-4.2L6 9l4.4-1.8z"/><path d="M19 15l.7 1.8L21.5 17.5l-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg><span>Asistente</span></div>
+    <div class="nav-item" data-view="dueno-view-perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>Perfil</span></div>
+  </div>
+</div>
+
+<script>
+  /* ============================================================ */
+  /* Navegación general: login / roles / logout                    */
+  /* ============================================================ */
+  function goTo(role){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    if(role === 'chofer'){
+      document.getElementById('screen-chofer').classList.add('active');
+    } else if(role === 'dueno'){
+      document.getElementById('screen-dueno').classList.add('active');
+    }
+  }
+
+  function logout(){
+    // si había un turno en curso, lo dejamos como estaba (no se pierde al volver)
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-login').classList.add('active');
+  }
+
+  function switchTab(navContainer, targetViewId){
+    navContainer.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    navContainer.querySelector(`[data-view="${targetViewId}"]`).classList.add('active');
+
+    const screen = navContainer.closest('.screen');
+    screen.querySelectorAll('.chofer-view, .dueno-view').forEach(v => v.classList.remove('active'));
+    document.getElementById(targetViewId).classList.add('active');
+  }
+
+  /* ============================================================ */
+  /* CHOFER: turno, viajes, historial, perfil                      */
+  /* ============================================================ */
+  const choferState = {
+    turnoActivo: false,
+    turnoInicio: null,
+    timerId: null,
+    movil: '',
+    taxiEfvo: 0, taxiTransf: 0,
+    uberEfvo: 0, uberTransf: 0,
+    viajesCount: 0,
+    gastosTotal: 0,
+    descuentosTotal: 0,
+    descuentosCC: 0,
+    serviceNotes: '',
+    ccTotal: 0
+  };
+
+  function money(n){
+    return '$' + Math.round(n).toLocaleString('es-AR');
+  }
+
+  /* ---- generador de "aleatorios" con semilla: mismo mes elegido -> mismos números ---- */
+  let rand = Math.random;
+
+  function mulberry32(seed){
+    return function(){
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function seedFromString(str){
+    let h = 0;
+    for(let i = 0; i < str.length; i++){ h = (h * 31 + str.charCodeAt(i)) | 0; }
+    return h;
+  }
+
+  const MESES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+  let reportesMonthKey = null;
+
+  function poblarSelectorMeses(){
+    const sel = document.getElementById('sel-reportes-month');
+    if(!sel) return;
+    const now = new Date();
+    let html = '';
+    for(let i = 0; i < 12; i++){
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      const nombreMes = MESES_ES[d.getMonth()];
+      const label = `${nombreMes.charAt(0).toUpperCase()}${nombreMes.slice(1)} ${d.getFullYear()}`;
+      html += `<option value="${key}" data-label="${label}">${label}</option>`;
+    }
+    sel.innerHTML = html;
+    reportesMonthKey = sel.value;
+  }
+
+  function buildSmoothPath(pts){
+    if(pts.length < 2) return '';
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for(let i = 0; i < pts.length - 1; i++){
+      const p0 = pts[i], p1 = pts[i+1];
+      const midX = (p0.x + p1.x) / 2;
+      d += ` C ${midX} ${p0.y}, ${midX} ${p1.y}, ${p1.x} ${p1.y}`;
+    }
+    return d;
+  }
+
+  function abrirModalMovil(){
+    document.getElementById('input-movil-modal').value = '';
+    document.getElementById('movil-modal-error').classList.remove('show');
+    document.getElementById('movil-modal').classList.add('active');
+    setTimeout(() => document.getElementById('input-movil-modal').focus(), 100);
+  }
+
+  function confirmarMovilYComenzar(){
+    const input = document.getElementById('input-movil-modal');
+    const valor = input.value.trim();
+    if(!valor){
+      document.getElementById('movil-modal-error').classList.add('show');
+      input.focus();
+      return;
+    }
+    document.getElementById('movil-modal').classList.remove('active');
+    comenzarTurno(valor);
+  }
+
+  function comenzarTurno(movil){
+    choferState.turnoActivo = true;
+    choferState.turnoInicio = new Date();
+    choferState.movil = movil;
+    choferState.taxiEfvo = 0; choferState.taxiTransf = 0;
+    choferState.uberEfvo = 0; choferState.uberTransf = 0;
+    choferState.viajesCount = 0;
+    choferState.gastosTotal = 0;
+    choferState.descuentosTotal = 0;
+    choferState.descuentosCC = 0;
+    choferState.serviceNotes = '';
+    choferState.ccTotal = 0;
+
+    document.getElementById('viajes-stack').innerHTML = '';
+    seleccionarTipoViaje('Taxi');
+    resetearFotoTicket();
+    document.getElementById('gastos-stack').innerHTML = '';
+    document.getElementById('cc-stack').innerHTML = '';
+    document.getElementById('input-service').value = '';
+    document.getElementById('btn-guardar-service').classList.remove('saved');
+    document.getElementById('btn-guardar-service-txt').textContent = 'Guardar';
+    actualizarStatsChofer();
+
+    const horaInicio = choferState.turnoInicio.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById('chofer-subtitle').textContent = `Marcos R. · Móvil #${movil} · Desde ${horaInicio}`;
+
+    document.getElementById('chofer-preturno').classList.remove('active');
+    document.getElementById('chofer-enturno').classList.add('active');
+    document.getElementById('chofer-nav').style.display = 'flex';
+    document.getElementById('btn-finalizar-turno').style.display = 'flex';
+
+    // volver siempre a la pestaña "Viajes" al iniciar
+    switchTab(document.getElementById('chofer-nav'), 'chofer-view-viajes');
+
+    if(choferState.timerId) clearInterval(choferState.timerId);
+    choferState.timerId = setInterval(actualizarTiempoTurno, 30000);
+    actualizarTiempoTurno();
+  }
+
+  function actualizarTiempoTurno(){
+    if(!choferState.turnoInicio) return;
+    const horas = (Date.now() - choferState.turnoInicio.getTime()) / 3600000;
+    document.getElementById('stat-turno-time').textContent = horas.toFixed(1) + 'h';
+  }
+
+  function actualizarStatsChofer(){
+    const taxiTotal = choferState.taxiEfvo + choferState.taxiTransf;
+    const uberTotal = choferState.uberEfvo + choferState.uberTransf;
+    document.getElementById('stat-taxi-total').textContent = money(taxiTotal);
+    document.getElementById('stat-taxi-breakdown').innerHTML = `Efvo ${money(choferState.taxiEfvo)}<br>Transf ${money(choferState.taxiTransf)}`;
+    document.getElementById('stat-uber-total').textContent = money(uberTotal);
+    document.getElementById('stat-uber-breakdown').innerHTML = `Efvo ${money(choferState.uberEfvo)}<br>Transf ${money(choferState.uberTransf)}`;
+    document.getElementById('stat-viajes-count').textContent = choferState.viajesCount;
+  }
+
+  function calcularLiquidacion(){
+    const taxiEfvo = choferState.taxiEfvo, taxiTransf = choferState.taxiTransf;
+    const uberEfvo = choferState.uberEfvo, uberTransf = choferState.uberTransf;
+    const ingresoEfectivo = taxiEfvo + uberEfvo;
+    const ingresoTransferencia = taxiTransf + uberTransf;
+    const ccTotal = choferState.ccTotal;
+    const descuentos = choferState.descuentosTotal;
+    const descuentosCC = choferState.descuentosCC;
+    const ingresoBruto = ingresoEfectivo + ingresoTransferencia + ccTotal + descuentos;
+    // total bruto: efectivo + transferencia + cuenta corriente, ya neto de los descuentos hechos en los viajes
+    // (la cuenta corriente entra en la suma porque también cuenta para la comisión del chofer)
+    const totalBruto = ingresoEfectivo + ingresoTransferencia + ccTotal;
+    const comisionChofer = totalBruto * 0.35;
+    const saldoTrasComision = totalBruto - comisionChofer;
+    const gastos = choferState.gastosTotal;
+    const aRendir = saldoTrasComision - gastos;
+    return {
+      taxiEfvo, taxiTransf, uberEfvo, uberTransf,
+      ingresoEfectivo, ingresoTransferencia, ccTotal, ingresoBruto, descuentos, descuentosCC, totalBruto,
+      comisionChofer, saldoTrasComision, gastos, aRendir
+    };
+  }
+
+  function ticketRowsHTML(liq, horas, viajes){
+    return `
+      <div class="modal-row"><span>Duración</span><b>${horas.toFixed(1)}h</b></div>
+      <div class="modal-row"><span>Viajes</span><b>${viajes}</b></div>
+      <div class="modal-row"><span>Ingreso bruto (antes de descuentos)</span><b>${money(liq.ingresoBruto)}</b></div>
+      <div class="modal-row">
+        <span>Descuentos en viajes</span>
+        <b style="color:#c9483d;">-${money(liq.descuentos)}</b>
+      </div>
+      ${liq.descuentosCC > 0 ? `<div class="modal-row" style="margin-top:-6px;"><span style="color:#9a9a96; font-size:11px;">(incluye ${money(liq.descuentosCC)} de viajes de cuenta corriente)</span><span></span></div>` : ''}
+      <div class="modal-row-block">
+        <div class="modal-row"><span>Ingreso efectivo</span><b>${money(liq.ingresoEfectivo)}</b></div>
+        <p class="modal-subrow">Taxi ${money(liq.taxiEfvo)} · Uber ${money(liq.uberEfvo)}</p>
+      </div>
+      <div class="modal-row-block">
+        <div class="modal-row"><span>Ingreso transferencia</span><b>${money(liq.ingresoTransferencia)}</b></div>
+        <p class="modal-subrow">Taxi ${money(liq.taxiTransf)} · Uber ${money(liq.uberTransf)}</p>
+      </div>
+      <div class="modal-row"><span>Cuenta corriente</span><b style="color:#4d64d9;">${money(liq.ccTotal)}</b></div>
+      <div class="modal-row" style="border-top:1.5px solid rgba(0,0,0,0.08); padding-top:10px;"><span>Total bruto (neto de descuentos)</span><b>${money(liq.totalBruto)}</b></div>
+      <div class="modal-row"><span>Tu comisión (35%)</span><b style="color:#2fa85a;">-${money(liq.comisionChofer)}</b></div>
+      <div class="modal-row"><span>Saldo tras tu comisión</span><b>${money(liq.saldoTrasComision)}</b></div>
+      <div class="modal-row"><span>Gastos del turno</span><b style="color:#c9483d;">-${money(liq.gastos)}</b></div>
+      <div class="modal-row" style="border-top:1.5px solid rgba(0,0,0,0.1); margin-top:4px; padding-top:12px;"><span>A rendir al administrativo</span><b style="font-size:15px;">${money(liq.aRendir)}</b></div>
+      ${liq.ccTotal > 0 ? `<div class="modal-row" style="margin-top:-6px;"><span style="color:#9a9a96; font-size:11px;">(incluye ${money(liq.ccTotal)} de cuenta corriente aún no cobrada)</span><span></span></div>` : ''}
+    `;
+  }
+
+  function finalizarTurno(){
+    if(!choferState.turnoActivo) return;
+    const horas = (Date.now() - choferState.turnoInicio.getTime()) / 3600000;
+    const liq = calcularLiquidacion();
+    document.getElementById('finalizar-modal-body').innerHTML = ticketRowsHTML(liq, horas, choferState.viajesCount);
+    document.getElementById('finalizar-modal').classList.add('active');
+  }
+
+  let fotosTicketPendientes = [];
+
+  function resetearFotoTicket(){
+    fotosTicketPendientes = [];
+    document.getElementById('input-foto-reloj').value = '';
+    renderFotosReloj();
+  }
+
+  function renderFotosReloj(){
+    const grid = document.getElementById('fotos-reloj-grid');
+    grid.innerHTML = fotosTicketPendientes.map((src, i) => `
+      <div class="foto-reloj-item">
+        <img src="${src}" data-idx="${i}">
+        <button type="button" class="foto-reloj-remove" data-idx="${i}">✕</button>
+      </div>
+    `).join('');
+    grid.querySelectorAll('img').forEach(img => {
+      img.addEventListener('click', function(){ abrirFotoCompleta(img.src); });
+    });
+    grid.querySelectorAll('.foto-reloj-remove').forEach(btn => {
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        fotosTicketPendientes.splice(parseInt(btn.dataset.idx, 10), 1);
+        renderFotosReloj();
+      });
+    });
+    const cant = fotosTicketPendientes.length;
+    document.getElementById('btn-sacar-foto-reloj-txt').textContent = cant > 0
+      ? `Agregar otra foto (${cant} cargada${cant > 1 ? 's' : ''})`
+      : 'Agregar foto';
+    document.getElementById('btn-sacar-foto-reloj').classList.toggle('tomada', cant > 0);
+  }
+
+  function confirmarFinalizarTurno(){
+    const liq = calcularLiquidacion();
+    const horas = (Date.now() - choferState.turnoInicio.getTime()) / 3600000;
+
+    // guardamos el turno recién cerrado en el historial, con la liquidación completa (para poder reabrir el ticket)
+    agregarTurnoAlHistorial({
+      fecha: new Date(),
+      duracionHoras: horas,
+      viajes: choferState.viajesCount,
+      total: liq.totalBruto,
+      fotosTicket: fotosTicketPendientes.slice(),
+      ...liq
+    });
+
+    resetearFotoTicket();
+    clearInterval(choferState.timerId);
+    choferState.timerId = null;
+    choferState.turnoActivo = false;
+
+    document.getElementById('finalizar-modal').classList.remove('active');
+    document.getElementById('chofer-enturno').classList.remove('active');
+    document.getElementById('chofer-preturno').classList.add('active');
+    document.getElementById('chofer-nav').style.display = 'none';
+    document.getElementById('btn-finalizar-turno').style.display = 'none';
+  }
+
+  let viajeTipoSeleccionado = 'Taxi';
+
+  function seleccionarTipoViaje(tipo){
+    viajeTipoSeleccionado = tipo;
+    const bg = document.getElementById('tipo-toggle-bg');
+    const botones = document.querySelectorAll('#tipo-toggle .tipo-toggle-btn');
+    botones.forEach(b => b.classList.toggle('active', b.dataset.tipo === tipo));
+    bg.style.transform = tipo === 'Uber' ? 'translateX(100%)' : 'translateX(0)';
+  }
+
+  function agregarViaje(){
+    if(!choferState.turnoActivo) return;
+    const tipo = viajeTipoSeleccionado;
+    const medio = document.getElementById('sel-medio').value;
+    const input = document.getElementById('input-monto');
+    const montoNum = parseFloat((input.value || '0').replace(/[^0-9.]/g, ''));
+    if(!input.value || !montoNum){ input.focus(); return; }
+
+    const inputDescuento = document.getElementById('input-descuento');
+    let descuentoNum = parseFloat((inputDescuento.value || '0').replace(/[^0-9.]/g, '')) || 0;
+    if(descuentoNum > montoNum) descuentoNum = montoNum;
+    const netoNum = montoNum - descuentoNum;
+
+    const now = new Date();
+    const hora = now.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+    const isTaxi = tipo === 'Taxi';
+    const isEfvo = medio === 'Efectivo';
+    const id = 'c' + Date.now();
+
+    if(isTaxi){ isEfvo ? choferState.taxiEfvo += netoNum : choferState.taxiTransf += netoNum; }
+    else { isEfvo ? choferState.uberEfvo += netoNum : choferState.uberTransf += netoNum; }
+    choferState.descuentosTotal += descuentoNum;
+    choferState.viajesCount += 1;
+    actualizarStatsChofer();
+
+    const card = document.createElement('div');
+    card.className = 'card simple';
+    card.dataset.kind = 'viaje';
+    card.dataset.tipo = tipo;
+    card.dataset.medio = medio;
+    card.dataset.monto = montoNum;
+    card.dataset.descuento = descuentoNum;
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-person">
+          <div class="avatar icon ${isTaxi ? 'taxi' : 'uber'}">${isTaxi ? 'TX' : 'UB'}</div>
+          <div><p class="p-name">${tipo}</p><p class="p-role">${hora} hs · ${medio}</p></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="edit-viaje-btn"><i class="ti ti-pencil" style="font-size:12px;"></i>Editar</button>
+          <div class="checkbox"></div>
+        </div>
+      </div>
+      <div class="card-data">
+        <div class="data-col"><span class="lbl">Monto</span><span class="val val-monto">${money(montoNum)}</span></div>
+        <div class="data-col"><span class="lbl">Hora</span><span class="val">${hora}</span></div>
+      </div>
+      <div class="card-data" style="margin-top:8px; ${descuentoNum > 0 ? '' : 'display:none;'}" data-descuento-row>
+        <div class="data-col"><span class="lbl">Descuento</span><span class="val val-descuento" style="color:#c9483d;">-${money(descuentoNum)}</span></div>
+        <div class="data-col"><span class="lbl">Neto</span><span class="val val-neto">${money(netoNum)}</span></div>
+      </div>
+      <p class="comment-link" data-target="${id}">Agregar comentario</p>
+      <div class="comment-box" id="${id}">
+        <textarea placeholder="Por qué no debe contarse este viaje en la recaudación"></textarea>
+      </div>
+    `;
+    document.getElementById('viajes-stack').prepend(card);
+    card.querySelector('.edit-viaje-btn').addEventListener('click', function(e){
+      e.stopPropagation();
+      abrirEditarMonto(card);
+    });
+    card.addEventListener('click', function(e){
+      if(e.target.closest('.comment-link') || e.target.closest('.comment-box')) return;
+      abrirEditarMonto(card);
+    });
+    input.value = '';
+    inputDescuento.value = '';
+    document.getElementById('discount-box').classList.remove('open');
+    input.blur();
+    inputDescuento.blur();
+    bindCommentLinks();
+  }
+
+  let viajeEnEdicion = null;
+
+  function abrirEditarMonto(cardEl){
+    viajeEnEdicion = cardEl;
+    document.getElementById('input-editar-monto').value = cardEl.dataset.monto;
+    const descuentoActual = parseFloat(cardEl.dataset.descuento) || 0;
+    document.getElementById('input-editar-descuento').value = descuentoActual > 0 ? descuentoActual : '';
+    document.getElementById('editar-monto-modal').classList.add('active');
+    setTimeout(() => document.getElementById('input-editar-monto').focus(), 100);
+  }
+
+  function guardarEdicionMonto(){
+    if(!viajeEnEdicion) return;
+    const inputMonto = document.getElementById('input-editar-monto');
+    const inputDescuento = document.getElementById('input-editar-descuento');
+    const nuevoMontoNum = parseFloat((inputMonto.value || '0').replace(/[^0-9.]/g, ''));
+    if(!nuevoMontoNum){ inputMonto.focus(); return; }
+    let nuevoDescuentoNum = parseFloat((inputDescuento.value || '0').replace(/[^0-9.]/g, '')) || 0;
+    if(nuevoDescuentoNum > nuevoMontoNum) nuevoDescuentoNum = nuevoMontoNum;
+
+    const card = viajeEnEdicion;
+    const montoViejo = parseFloat(card.dataset.monto);
+    const descuentoViejo = parseFloat(card.dataset.descuento) || 0;
+    const netoViejo = montoViejo - descuentoViejo;
+    const netoNuevo = nuevoMontoNum - nuevoDescuentoNum;
+    const diferenciaNeta = netoNuevo - netoViejo;
+    const diferenciaDescuento = nuevoDescuentoNum - descuentoViejo;
+
+    if(card.dataset.kind === 'cc'){
+      choferState.ccTotal += diferenciaNeta;
+      choferState.descuentosTotal += diferenciaDescuento;
+      choferState.descuentosCC += diferenciaDescuento;
+    } else {
+      const tipo = card.dataset.tipo;
+      const medio = card.dataset.medio;
+      const isTaxi = tipo === 'Taxi';
+      const isEfvo = medio === 'Efectivo';
+      if(isTaxi){ isEfvo ? choferState.taxiEfvo += diferenciaNeta : choferState.taxiTransf += diferenciaNeta; }
+      else { isEfvo ? choferState.uberEfvo += diferenciaNeta : choferState.uberTransf += diferenciaNeta; }
+      choferState.descuentosTotal += diferenciaDescuento;
+    }
+    actualizarStatsChofer();
+
+    card.dataset.monto = nuevoMontoNum;
+    card.dataset.descuento = nuevoDescuentoNum;
+    card.querySelector('.val-monto').textContent = money(nuevoMontoNum);
+    const filaDescuento = card.querySelector('[data-descuento-row]');
+    if(nuevoDescuentoNum > 0){
+      filaDescuento.style.display = '';
+      card.querySelector('.val-descuento').textContent = '-' + money(nuevoDescuentoNum);
+      card.querySelector('.val-neto').textContent = money(netoNuevo);
+    } else {
+      filaDescuento.style.display = 'none';
+    }
+
+    document.getElementById('editar-monto-modal').classList.remove('active');
+    viajeEnEdicion = null;
+  }
+
+  const SERVICE_STORAGE_KEY = 'appjuan_service_historial';
+
+  function cargarServiceHistorial(){
+    try {
+      const raw = localStorage.getItem(SERVICE_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch(e){ return []; }
+  }
+
+  function guardarServiceHistorialEnStorage(lista){
+    try { localStorage.setItem(SERVICE_STORAGE_KEY, JSON.stringify(lista)); } catch(e){}
+  }
+
+  function renderServiceHistorial(){
+    const cont = document.getElementById('service-historial-list');
+    if(!cont) return;
+    const lista = cargarServiceHistorial();
+    if(lista.length === 0){
+      cont.innerHTML = `<p style="font-size:12px; color:#9a9a96; margin:4px 2px 16px;">Todavía no registraste ningún service. Se guarda en este celular.</p>`;
+      return;
+    }
+    cont.innerHTML = lista.map(item => `
+      <div class="hist-card" style="align-items:flex-start; display:block;">
+        <p class="hist-date">${new Date(item.fecha).toLocaleDateString('es-AR', {weekday:'long', day:'2-digit', month:'2-digit'})}</p>
+        <p class="hist-sub" style="white-space:pre-wrap; margin-top:4px;">${item.texto}</p>
+      </div>
+    `).join('');
+  }
+
+  function agregarServiceEntry(){
+    const input = document.getElementById('input-service');
+    const texto = input.value.trim();
+    if(!texto){ input.focus(); return; }
+
+    const lista = cargarServiceHistorial();
+    lista.unshift({ fecha: new Date().toISOString(), texto });
+    guardarServiceHistorialEnStorage(lista);
+    input.value = '';
+    renderServiceHistorial();
+
+    const btn = document.getElementById('btn-guardar-service');
+    const txt = document.getElementById('btn-guardar-service-txt');
+    btn.classList.add('saved');
+    txt.textContent = 'Guardado ✓';
+    clearTimeout(btn._resetTimeout);
+    btn._resetTimeout = setTimeout(() => {
+      btn.classList.remove('saved');
+      txt.textContent = 'Guardar';
+    }, 1800);
+  }
+
+  function agregarGasto(){
+    if(!choferState.turnoActivo) return;
+    const inputConcepto = document.getElementById('input-gasto-concepto');
+    const inputMonto = document.getElementById('input-gasto-monto');
+    const concepto = inputConcepto.value.trim();
+    const montoNum = parseFloat((inputMonto.value || '0').replace(/[^0-9.]/g, ''));
+    if(!concepto || !montoNum){ (concepto ? inputMonto : inputConcepto).focus(); return; }
+
+    choferState.gastosTotal += montoNum;
+    actualizarStatsChofer();
+
+    const now = new Date();
+    const hora = now.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+    const card = document.createElement('div');
+    card.className = 'card simple';
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-person">
+          <div class="avatar icon" style="background:#c9483d;"><i class="ti ti-receipt" style="font-size:18px;"></i></div>
+          <div><p class="p-name">${concepto}</p><p class="p-role">${hora} hs</p></div>
+        </div>
+      </div>
+      <div class="card-data">
+        <div class="data-col"><span class="lbl">Monto</span><span class="val" style="color:#c9483d;">-${money(montoNum)}</span></div>
+        <div class="data-col"><span class="lbl">Hora</span><span class="val">${hora}</span></div>
+      </div>
+    `;
+    document.getElementById('gastos-stack').prepend(card);
+    inputConcepto.value = '';
+    inputMonto.value = '';
+    inputConcepto.blur();
+    inputMonto.blur();
+  }
+
+  function agregarCC(){
+    if(!choferState.turnoActivo) return;
+    const inputCliente = document.getElementById('input-cc-cliente');
+    const inputMonto = document.getElementById('input-cc-monto');
+    const cliente = inputCliente.value.trim();
+    const montoNum = parseFloat((inputMonto.value || '0').replace(/[^0-9.]/g, ''));
+    if(!cliente || !montoNum){ (cliente ? inputMonto : inputCliente).focus(); return; }
+
+    const inputDescuento = document.getElementById('input-cc-descuento');
+    let descuentoNum = parseFloat((inputDescuento.value || '0').replace(/[^0-9.]/g, '')) || 0;
+    if(descuentoNum > montoNum) descuentoNum = montoNum;
+    const netoNum = montoNum - descuentoNum;
+
+    choferState.ccTotal += netoNum;
+    if(descuentoNum > 0){
+      choferState.descuentosTotal += descuentoNum;
+      choferState.descuentosCC += descuentoNum;
+    }
+    choferState.viajesCount += 1;
+    actualizarStatsChofer();
+
+    const now = new Date();
+    const hora = now.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+    const card = document.createElement('div');
+    card.className = 'card simple';
+    card.dataset.kind = 'cc';
+    card.dataset.monto = montoNum;
+    card.dataset.descuento = descuentoNum;
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-person">
+          <div class="avatar icon" style="background:#4d64d9;"><i class="ti ti-users" style="font-size:18px;"></i></div>
+          <div><p class="p-name">${cliente}</p><p class="p-role">${hora} hs · Pendiente de cobro</p></div>
+        </div>
+        <button type="button" class="edit-viaje-btn"><i class="ti ti-pencil" style="font-size:12px;"></i>Editar</button>
+      </div>
+      <div class="card-data">
+        <div class="data-col"><span class="lbl">Monto</span><span class="val val-monto">${money(montoNum)}</span></div>
+        <div class="data-col"><span class="lbl">Hora</span><span class="val">${hora}</span></div>
+      </div>
+      <div class="card-data" style="margin-top:8px; ${descuentoNum > 0 ? '' : 'display:none;'}" data-descuento-row>
+        <div class="data-col"><span class="lbl">Descuento</span><span class="val val-descuento" style="color:#c9483d;">-${money(descuentoNum)}</span></div>
+        <div class="data-col"><span class="lbl">Neto</span><span class="val val-neto">${money(netoNum)}</span></div>
+      </div>
+    `;
+    document.getElementById('cc-stack').prepend(card);
+    card.querySelector('.edit-viaje-btn').addEventListener('click', function(e){
+      e.stopPropagation();
+      abrirEditarMonto(card);
+    });
+    card.addEventListener('click', function(){
+      abrirEditarMonto(card);
+    });
+    inputCliente.value = '';
+    inputMonto.value = '';
+    inputDescuento.value = '';
+    document.getElementById('discount-box-cc').classList.remove('open');
+    inputCliente.blur();
+    inputMonto.blur();
+    inputDescuento.blur();
+  }
+
+  function bindCommentLinks(){
+    document.querySelectorAll('.comment-link[data-target]').forEach(link => {
+      if(link.dataset.bound) return;
+      link.dataset.bound = '1';
+      link.addEventListener('click', function(e){
+        e.stopPropagation();
+        const box = document.getElementById(link.dataset.target);
+        if(box) box.classList.toggle('open');
+      });
+    });
+  }
+
+  // ---- historial (datos random + turnos reales cerrados) ----
+  const historialTurnos = [];
+
+  function diaSemanaFecha(d){
+    return d.toLocaleDateString('es-AR', {weekday:'long', day:'2-digit', month:'2-digit'});
+  }
+
+  function agregarTurnoAlHistorial(turno){
+    historialTurnos.unshift(turno);
+    renderHistorial();
+    renderComisionesChart(comisionesPeriodoActual);
+  }
+
+  function generarHistorialInicial(){
+    const dias = 4;
+    for(let i = 1; i <= dias; i++){
+      const fecha = new Date();
+      fecha.setDate(fecha.getDate() - i);
+
+      const taxiEfvo = 8000 + Math.random()*20000;
+      const taxiTransf = 8000 + Math.random()*20000;
+      const uberEfvo = 6000 + Math.random()*18000;
+      const uberTransf = 6000 + Math.random()*18000;
+      const ingresoEfectivo = taxiEfvo + uberEfvo;
+      const ingresoTransferencia = taxiTransf + uberTransf;
+      const ccTotal = Math.random() > 0.6 ? 1000 + Math.random()*4000 : 0;
+      const descuentosCC = ccTotal > 0 && Math.random() > 0.5 ? ccTotal*0.1 : 0;
+      const descuentos = (500 + Math.random()*2500) + descuentosCC;
+      const ingresoBruto = ingresoEfectivo + ingresoTransferencia + ccTotal + descuentos;
+      const totalBruto = ingresoEfectivo + ingresoTransferencia + ccTotal;
+      const comisionChofer = totalBruto * 0.35;
+      const saldoTrasComision = totalBruto - comisionChofer;
+      const gastos = totalBruto * (0.04 + Math.random()*0.08);
+      const aRendir = saldoTrasComision - gastos;
+
+      historialTurnos.push({
+        fecha,
+        duracionHoras: 4 + Math.random() * 5,
+        viajes: 5 + Math.floor(Math.random() * 14),
+        total: totalBruto,
+        taxiEfvo, taxiTransf, uberEfvo, uberTransf,
+        ingresoEfectivo, ingresoTransferencia, ccTotal, ingresoBruto,
+        descuentos, descuentosCC, totalBruto, comisionChofer, saldoTrasComision, gastos, aRendir
+      });
+    }
+    renderHistorial();
+    renderComisionesChart(comisionesPeriodoActual);
+  }
+
+  let comisionesPeriodoActual = 'semana';
+
+  function renderComisionesChart(period){
+    comisionesPeriodoActual = period;
+    const cont = document.getElementById('comisiones-chart-content');
+    if(!cont) return;
+
+    let categorias, valores;
+
+    if(period === 'dia'){
+      const ultimos = historialTurnos.slice(0, 7).slice().reverse();
+      if(ultimos.length === 0){
+        cont.innerHTML = `<p style="font-size:12px; color:#9a9a96; margin:10px 2px 0;">Todavía no cerraste ningún turno.</p>`;
+        return;
+      }
+      categorias = ultimos.map(t => t.fecha.toLocaleDateString('es-AR', {weekday:'short'}));
+      valores = ultimos.map(t => t.comisionChofer || 0);
+    } else if(period === 'mes'){
+      categorias = ['Ene','Feb','Mar','Abr','May','Jun'];
+      const base = (historialTurnos[0] && historialTurnos[0].comisionChofer || 15000) * 22;
+      valores = categorias.map(() => base*0.6 + Math.random()*base*0.7);
+    } else {
+      categorias = ['Sem 1','Sem 2','Sem 3','Sem 4'];
+      const base = (historialTurnos[0] && historialTurnos[0].comisionChofer || 15000) * 5;
+      valores = categorias.map(() => base*0.6 + Math.random()*base*0.7);
+    }
+
+    const maxVal = Math.max(...valores, 1);
+    const total = valores.reduce((a,b) => a+b, 0);
+
+    const barsHtml = categorias.map((c,i) => `
+      <div class="bar-col">
+        <div class="bar" style="height:${(valores[i]/maxVal*100).toFixed(0)}%; background:#2fa85a;"></div>
+        <span class="bar-lbl">${c}</span>
+      </div>
+    `).join('');
+
+    cont.innerHTML = `
+      <p class="progress-total" style="font-size:22px; margin-top:6px;">${money(total)}</p>
+      <p class="progress-sub" style="margin-bottom:14px;">Comisión acumulada</p>
+      <div class="bar-chart">${barsHtml}</div>
+    `;
+  }
+
+  function limpiarHistorialViejo(){
+    const ahora = new Date();
+    const mesActual = ahora.getMonth();
+    const anioActual = ahora.getFullYear();
+    for(let i = historialTurnos.length - 1; i >= 0; i--){
+      const f = historialTurnos[i].fecha;
+      if(f.getMonth() !== mesActual || f.getFullYear() !== anioActual){
+        historialTurnos.splice(i, 1);
+      }
+    }
+  }
+
+  function renderHistorial(){
+    limpiarHistorialViejo();
+    const cont = document.getElementById('historial-stack');
+    if(!cont) return;
+    cont.innerHTML = historialTurnos.map((t, i) => `
+      <div class="hist-card" data-idx="${i}" style="cursor:pointer;">
+        <div>
+          <p class="hist-date">${diaSemanaFecha(t.fecha)}</p>
+          <p class="hist-sub">Turno de ${t.duracionHoras.toFixed(1)}h${t.aRendir !== undefined ? ' · Rendiste ' + money(t.aRendir) : ''}</p>
+        </div>
+        <div>
+          <p class="hist-total">${money(t.total)}</p>
+          <p class="hist-viajes">${t.viajes} viajes</p>
+        </div>
+      </div>
+    `).join('');
+    cont.querySelectorAll('.hist-card').forEach(card => {
+      card.addEventListener('click', function(){
+        mostrarTicketTurno(historialTurnos[parseInt(card.dataset.idx, 10)]);
+      });
+    });
+  }
+
+  function mostrarTicketTurno(turno){
+    document.getElementById('ver-turno-modal-title').textContent = `Ticket del ${diaSemanaFecha(turno.fecha)}`;
+    let bodyHtml = ticketRowsHTML(turno, turno.duracionHoras, turno.viajes);
+    if(turno.fotosTicket && turno.fotosTicket.length > 0){
+      bodyHtml += `
+        <div class="ticket-foto-box" style="margin-top:14px;">
+          <p class="ticket-foto-title">Tickets / comprobantes (${turno.fotosTicket.length})</p>
+          <div class="fotos-reloj-grid" id="ver-turno-fotos-grid">
+            ${turno.fotosTicket.map(src => `<div class="foto-reloj-item"><img src="${src}"></div>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+    document.getElementById('ver-turno-modal-body').innerHTML = bodyHtml;
+    const grid = document.getElementById('ver-turno-fotos-grid');
+    if(grid){
+      grid.querySelectorAll('img').forEach(img => {
+        img.addEventListener('click', function(){ abrirFotoCompleta(img.src); });
+      });
+    }
+    document.getElementById('ver-turno-modal').classList.add('active');
+  }
+
+  function abrirFotoCompleta(src){
+    document.getElementById('foto-full-img').src = src;
+    document.getElementById('foto-full-modal').classList.add('active');
+  }
+
+  let choferFotoPerfil = null;
+
+  function renderPerfilChofer(){
+    const cont = document.getElementById('chofer-perfil-card');
+    if(!cont) return;
+    const calificacion = (4.4 + Math.random() * 0.6).toFixed(1);
+    const viajesHistoricos = 800 + Math.floor(Math.random() * 2500);
+    const antiguedadMeses = 6 + Math.floor(Math.random() * 40);
+    cont.innerHTML = `
+      <div class="profile-card">
+        <div class="profile-avatar-wrap">
+          <img class="profile-avatar" id="chofer-perfil-avatar" src="${choferFotoPerfil || 'https://i.pravatar.cc/160?img=15'}" alt="">
+          <button type="button" class="profile-avatar-edit-btn" id="btn-cambiar-foto-chofer"><i class="ti ti-camera" style="font-size:13px;"></i></button>
+        </div>
+        <input type="file" accept="image/*" id="input-foto-chofer-perfil" style="display:none;">
+        <p class="profile-name">Marcos Rodríguez</p>
+        <p class="profile-role">Chofer · Móvil #${choferState.movil || '—'}</p>
+        <div class="profile-grid">
+          <div class="profile-item"><span class="lbl">Calificación</span><p class="val">★ ${calificacion}</p></div>
+          <div class="profile-item"><span class="lbl">Viajes totales</span><p class="val">${viajesHistoricos.toLocaleString('es-AR')}</p></div>
+          <div class="profile-item"><span class="lbl">Antigüedad</span><p class="val">${antiguedadMeses} meses</p></div>
+          <div class="profile-item"><span class="lbl">Vehículo</span><p class="val">Corolla 2021</p></div>
+          <div class="profile-item"><span class="lbl">Teléfono</span><p class="val">351 555-0107</p></div>
+          <div class="profile-item"><span class="lbl">Licencia</span><p class="val">Vence 03/2027</p></div>
+        </div>
+      </div>
+    `;
+    document.getElementById('btn-cambiar-foto-chofer').addEventListener('click', function(){
+      document.getElementById('input-foto-chofer-perfil').click();
+    });
+    document.getElementById('input-foto-chofer-perfil').addEventListener('change', function(e){
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev){
+        choferFotoPerfil = ev.target.result;
+        document.getElementById('chofer-perfil-avatar').src = choferFotoPerfil;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* ============================================================ */
+  /* DUEÑO: reportes y perfil con datos random                     */
+  /* ============================================================ */
+  let reportesPeriodoActual = 'dia';
+
+  function renderReportes(period){
+    reportesPeriodoActual = period || 'dia';
+    period = period || 'semana';
+    const cont = document.getElementById('reportes-content');
+    if(!cont) return;
+
+    const monthPicker = document.getElementById('reportes-month-picker');
+    if(monthPicker) monthPicker.style.display = (period === 'mes') ? 'flex' : 'none';
+
+    let mesLabel = '';
+    if(period === 'mes'){
+      const sel = document.getElementById('sel-reportes-month');
+      if(sel && sel.value) reportesMonthKey = sel.value;
+      mesLabel = (sel && sel.selectedOptions[0]) ? sel.selectedOptions[0].dataset.label : '';
+      // mismo mes elegido -> siempre los mismos números (semilla fija por mes)
+      rand = mulberry32(seedFromString('reportes-' + reportesMonthKey));
+    } else {
+      rand = Math.random;
+    }
+
+    let categorias, escala, tituloChart, tituloTotal;
+    if(period === 'dia'){
+      categorias = ['00-04','04-08','08-12','12-16','16-20','20-24'];
+      escala = 8;
+      tituloChart = 'Recaudación por franja horaria';
+      tituloTotal = 'Total día';
+    } else if(period === 'mes'){
+      categorias = ['Sem 1','Sem 2','Sem 3','Sem 4'];
+      escala = 220;
+      tituloChart = 'Recaudación por semana';
+      tituloTotal = mesLabel ? `Total ${mesLabel}` : 'Total mes';
+    } else {
+      categorias = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+      escala = 60;
+      tituloChart = 'Recaudación por día';
+      tituloTotal = 'Total semana';
+    }
+
+    const valores = categorias.map(() => escala * 0.5 + rand() * escala);
+    const maxVal = Math.max(...valores);
+    const totalPeriodo = valores.reduce((a,b) => a + b, 0) * 1000;
+    const promedio = totalPeriodo / categorias.length;
+    const mejorChofer = ['Gómez, Pablo','Fernández, Iván','Rodríguez, Marcos'][Math.floor(rand()*3)];
+
+    const maxValIdx = valores.indexOf(maxVal);
+    const barsHtml = categorias.map((c, i) => `
+      <div class="bar-col">
+        ${i === maxValIdx ? `<div class="progress-tooltip">${money(valores[i]*1000)}</div>` : ''}
+        <div class="bar ${i === maxValIdx ? 'peak' : ''}" style="height:${(valores[i]/maxVal*100).toFixed(0)}%;"></div>
+        <span class="bar-lbl">${c}</span>
+      </div>
+    `).join('');
+
+    const ranking = [
+      ['Gómez, Pablo', escala*400 + rand()*escala*300],
+      ['Fernández, Iván', escala*350 + rand()*escala*300],
+      ['Rodríguez, Marcos', escala*300 + rand()*escala*300],
+      ['Silva, Carla', escala*200 + rand()*escala*250]
+    ].sort((a,b) => b[1]-a[1]);
+
+    // ---- combustible (gauge) ----
+    let combustibleMonto;
+    if(period === 'dia') combustibleMonto = 3000 + rand()*6000;
+    else if(period === 'mes') combustibleMonto = 90000 + rand()*130000;
+    else combustibleMonto = 20000 + rand()*35000;
+    const combustiblePct = 15 + rand()*20;
+    const estadoCombustible = combustiblePct > 28 ? 'Gasto alto' : (combustiblePct > 20 ? 'Gasto moderado' : 'Gasto bajo');
+    const gaugeFillDeg = (combustiblePct/100*2.2) * 270;
+    // (combustibleMonto es el único dato real: gasto en combustible cargado en el período)
+    // se distribuye ese mismo total entre las categorías del período para graficar la tendencia
+    const combustiblePesos = categorias.map(() => rand());
+    const combustiblePesosSum = combustiblePesos.reduce((a,b) => a+b, 0);
+    const combustibleValues = combustiblePesos.map(w => combustibleMonto * (w / combustiblePesosSum));
+    const maxComb = Math.max(...combustibleValues);
+    const minComb = Math.min(...combustibleValues);
+    const peakCombIdx = combustibleValues.indexOf(maxComb);
+
+    const combChartW = 300, combChartH = 90, combPadX = 10, combPadY = 12;
+    const combStepX = (combChartW - combPadX*2) / (categorias.length - 1);
+    const combPoints = combustibleValues.map((v, i) => {
+      const x = combPadX + i*combStepX;
+      const norm = maxComb === minComb ? 0.5 : (v - minComb) / (maxComb - minComb);
+      const y = combPadY + (1 - norm) * (combChartH - combPadY*2);
+      return { x, y };
+    });
+    const combPathD = buildSmoothPath(combPoints);
+    const combPeakPoint = combPoints[peakCombIdx];
+
+    // ---- facturación en pesos y transferencias (barras apiladas) ----
+    const facturacionSplits = valores.map(v => {
+      const total = v * 1000;
+      const efvoRatio = 0.35 + rand()*0.3;
+      const efvo = total * efvoRatio;
+      return { total, efvo, transf: total - efvo };
+    });
+    const facturacionTotal = facturacionSplits.reduce((a,s) => a+s.total, 0);
+
+    // ---- descuentos realizados por los choferes ----
+    let descuentosPctBase;
+    if(period === 'dia') descuentosPctBase = 4 + rand()*8;
+    else if(period === 'mes') descuentosPctBase = 5 + rand()*9;
+    else descuentosPctBase = 4 + rand()*9;
+    const descuentosTotal = facturacionTotal * (descuentosPctBase/100);
+    const descuentosPct = (descuentosTotal/facturacionTotal*100).toFixed(1);
+
+    const descSerie = categorias.map(() => rand());
+    const descSerieSum = descSerie.reduce((a,b) => a+b, 0);
+    const descValues = descSerie.map(w => descuentosTotal * (w/descSerieSum));
+    const maxDesc = Math.max(...descValues);
+    const minDesc = Math.min(...descValues);
+    const descChartW = 300, descChartH = 60, descPadX = 8, descPadY = 8;
+    const descStepX = (descChartW - descPadX*2) / (categorias.length - 1);
+    const descPoints = descValues.map((v, i) => {
+      const x = descPadX + i*descStepX;
+      const norm = maxDesc === minDesc ? 0.5 : (v - minDesc) / (maxDesc - minDesc);
+      const y = descPadY + (1 - norm) * (descChartH - descPadY*2);
+      return { x, y };
+    });
+    const descPathD = buildSmoothPath(descPoints);
+    const peakDescIdx = descValues.indexOf(maxDesc);
+    const descPeakPoint = descPoints[peakDescIdx];
+
+    // ---- cuenta corriente pendiente de cobro (toda la flota) ----
+    let ccPctBase;
+    if(period === 'dia') ccPctBase = 2 + rand()*5;
+    else if(period === 'mes') ccPctBase = 3 + rand()*6;
+    else ccPctBase = 2 + rand()*6;
+    const ccTotal = facturacionTotal * (ccPctBase/100);
+    const ccPct = (ccTotal/facturacionTotal*100).toFixed(1);
+
+    const ccSerie = categorias.map(() => rand());
+    const ccSerieSum = ccSerie.reduce((a,b) => a+b, 0);
+    const ccValues = ccSerie.map(w => ccTotal * (w/ccSerieSum));
+    const maxCC = Math.max(...ccValues);
+    const minCC = Math.min(...ccValues);
+    const ccPoints = ccValues.map((v, i) => {
+      const x = combPadX + i*combStepX;
+      const norm = maxCC === minCC ? 0.5 : (v - minCC) / (maxCC - minCC);
+      const y = combPadY + (1 - norm) * (combChartH - combPadY*2);
+      return { x, y };
+    });
+    const ccPathD = buildSmoothPath(ccPoints);
+    const peakCCIdx = ccValues.indexOf(maxCC);
+    const ccPeakPoint = ccPoints[peakCCIdx];
+    const deudores = [
+      ['Empresa XYZ', ccTotal*0.30],
+      ['Constructora Sur', ccTotal*0.24],
+      ['Hotel Plaza', ccTotal*0.19]
+    ];
+
+    // ---- liquidación de la flota: comisiones (35%), gastos y a rendir ----
+    const totalBrutoFlota = facturacionTotal;
+    const comisionesFlota = totalBrutoFlota * 0.35;
+    const saldoTrasComisionFlota = totalBrutoFlota - comisionesFlota;
+    let gastosFlotaPctBase;
+    if(period === 'dia') gastosFlotaPctBase = 6 + rand()*6;
+    else if(period === 'mes') gastosFlotaPctBase = 7 + rand()*7;
+    else gastosFlotaPctBase = 6 + rand()*6;
+    const gastosFlota = totalBrutoFlota * (gastosFlotaPctBase/100);
+    const aRendirFlota = saldoTrasComisionFlota - gastosFlota;
+    const efvoTotalSum = facturacionSplits.reduce((a,s) => a+s.efvo, 0);
+    const transfTotalSum = facturacionSplits.reduce((a,s) => a+s.transf, 0);
+    const maxTotalFact = Math.max(...facturacionSplits.map(s => s.total));
+
+    // ---- datos extra para los KPIs de Cuenta corriente y Gastos ----
+    const ccViajesAprox = period === 'dia' ? 1 + Math.floor(rand()*4) : (period === 'mes' ? 10 + Math.floor(rand()*30) : 3 + Math.floor(rand()*10));
+    const NOMBRES_CHOFERES = ['Rodríguez, Marcos','Gómez, Pablo','Fernández, Iván','Silva, Carla'];
+    const choferMasGasto = NOMBRES_CHOFERES[Math.floor(rand()*NOMBRES_CHOFERES.length)];
+
+    // ---- Comisiones: total + tendencia ----
+    const comSerie = categorias.map(() => rand());
+    const comSerieSum = comSerie.reduce((a,b) => a+b, 0);
+    const comValues = comSerie.map(w => comisionesFlota * (w/comSerieSum));
+    const maxCom = Math.max(...comValues), minCom = Math.min(...comValues);
+    const comPoints = comValues.map((v, i) => {
+      const x = combPadX + i*combStepX;
+      const norm = maxCom === minCom ? 0.5 : (v - minCom) / (maxCom - minCom);
+      const y = combPadY + (1 - norm) * (combChartH - combPadY*2);
+      return { x, y };
+    });
+    const comPathD = buildSmoothPath(comPoints);
+
+    // ---- Service: cantidad + tendencia ----
+    let serviceCount;
+    if(period === 'dia') serviceCount = 1 + Math.floor(rand()*4);
+    else if(period === 'mes') serviceCount = 15 + Math.floor(rand()*20);
+    else serviceCount = 4 + Math.floor(rand()*8);
+    const servSerie = categorias.map(() => rand());
+    const servSerieSum = servSerie.reduce((a,b) => a+b, 0);
+    const servValues = servSerie.map(w => serviceCount * (w/servSerieSum));
+    const maxServ = Math.max(...servValues), minServ = Math.min(...servValues);
+    const servPoints = servValues.map((v, i) => {
+      const x = combPadX + i*combStepX;
+      const norm = maxServ === minServ ? 0.5 : (v - minServ) / (maxServ - minServ);
+      const y = combPadY + (1 - norm) * (combChartH - combPadY*2);
+      return { x, y };
+    });
+    const servPathD = buildSmoothPath(servPoints);
+
+    // ---- Comprobantes: cantidad de fotos ----
+    let comprobantesCount;
+    if(period === 'dia') comprobantesCount = 2 + Math.floor(rand()*6);
+    else if(period === 'mes') comprobantesCount = 40 + Math.floor(rand()*40);
+    else comprobantesCount = 10 + Math.floor(rand()*15);
+    const peakIndex = facturacionSplits.findIndex(s => s.total === maxTotalFact);
+
+    const progressBarsHtml = categorias.map((c, i) => {
+      const s = facturacionSplits[i];
+      const heightPct = (s.total/maxTotalFact*100).toFixed(0);
+      return `
+        <div class="capsule-col">
+          <div class="capsule">
+            <div class="capsule-fill" style="height:${heightPct}%;"></div>
+          </div>
+          <span class="capsule-lbl">${c}</span>
+        </div>
+      `;
+    }).join('');
+
+    // ---- desglose taxi / uber (ring) ----
+    let taxiTotal, uberTotal, taxiViajes, uberViajes;
+    if(period === 'dia'){
+      taxiTotal = 20000 + rand()*15000; uberTotal = 12000 + rand()*12000;
+      taxiViajes = 5 + Math.floor(rand()*8); uberViajes = 3 + Math.floor(rand()*8);
+    } else if(period === 'mes'){
+      taxiTotal = 350000 + rand()*200000; uberTotal = 220000 + rand()*180000;
+      taxiViajes = 180 + Math.floor(rand()*150); uberViajes = 120 + Math.floor(rand()*150);
+    } else {
+      taxiTotal = 90000 + rand()*60000; uberTotal = 55000 + rand()*55000;
+      taxiViajes = 35 + Math.floor(rand()*40); uberViajes = 25 + Math.floor(rand()*40);
+    }
+    const taxiUberTotal = taxiTotal + uberTotal;
+    const ringFillDeg = (taxiTotal/taxiUberTotal) * 300;
+
+    cont.innerHTML = `
+      <div class="chart-card liquidacion-flota-card only-desktop">
+        <div class="dark-card-header" style="margin-bottom:22px;">
+          <p class="dark-card-title">Liquidación de la flota</p>
+          <span class="dark-card-sub">${tituloTotal}</span>
+        </div>
+        <div class="liquidacion-stats">
+          <div class="liquidacion-stat">
+            <p class="lbl">Total bruto</p>
+            <p class="val">${money(totalBrutoFlota)}</p>
+          </div>
+          <div class="liquidacion-stat">
+            <p class="lbl">Comisiones choferes (35%)</p>
+            <p class="val" style="color:#2fa85a;">-${money(comisionesFlota)}</p>
+          </div>
+          <div class="liquidacion-stat">
+            <p class="lbl">Gastos de la flota</p>
+            <p class="val" style="color:#e2544c;">-${money(gastosFlota)}</p>
+          </div>
+          <div class="liquidacion-stat destacado">
+            <p class="lbl">A rendir total</p>
+            <p class="val">${money(aRendirFlota)}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="report-kpis">
+        <div class="report-kpi">
+          <p class="lbl">${tituloTotal}</p>
+          <p class="val">${money(totalPeriodo)}</p>
+          <p class="kpi-breakdown">Efvo ${money(efvoTotalSum)}<br>Transf ${money(transfTotalSum)}</p>
+        </div>
+        <div class="report-kpi">
+          <p class="lbl">Cuenta corriente</p>
+          <p class="val">${money(ccTotal)}</p>
+          <p class="kpi-breakdown">${ccViajesAprox} viajes<br>${ccPct}% de facturación</p>
+        </div>
+        <div class="report-kpi">
+          <p class="lbl">Gastos</p>
+          <p class="val">${money(gastosFlota)}</p>
+          <p class="kpi-breakdown">${gastosFlotaPctBase.toFixed(1)}% de lo recaudado<br>Más gastó: ${choferMasGasto.split(',')[0]}</p>
+        </div>
+      </div>
+
+      <div class="chart-card combustible-dark-card">
+        <div class="dark-card-header">
+          <p class="dark-card-title">Combustible</p>
+          <span class="dark-card-sub">${tituloTotal}: ${money(combustibleMonto)}</span>
+        </div>
+        <div class="dark-chart-wrap">
+          <svg viewBox="0 0 300 90" class="dark-line-svg" preserveAspectRatio="none">
+            <path d="${combPathD}" fill="none" stroke="#f3d24e" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="${combPeakPoint.x}" cy="${combPeakPoint.y}" r="4.5" fill="#1c1c1c" stroke="#f3d24e" stroke-width="2.5"/>
+          </svg>
+          <div class="dark-tooltip" style="left:${(combPeakPoint.x/300*100).toFixed(1)}%; top:${(combPeakPoint.y/90*100).toFixed(1)}%;">${money(combustibleValues[peakCombIdx])}</div>
+        </div>
+        <div class="dark-chart-labels">
+          ${categorias.map((c,i) => `<span class="${i===peakCombIdx ? 'peak-lbl' : ''}">${c}</span>`).join('')}
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <p class="chart-title">Facturación en efectivo y transferencias</p>
+        <p class="progress-total">${money(facturacionTotal)}</p>
+        <p class="progress-sub">${tituloTotal}</p>
+        <div class="capsule-row">${progressBarsHtml}</div>
+        <div class="progress-legend">
+          <span><span class="dot" style="background:#1c1c1c;"></span>Efectivo ${money(efvoTotalSum)}</span>
+          <span><span class="dot" style="background:#f3d24e;"></span>Transferencia ${money(transfTotalSum)}</span>
+        </div>
+      </div>
+
+      <div class="chart-card ring-card">
+        <p class="chart-title">Desglose Taxi / Uber</p>
+        <div class="ring-wrap">
+          <div class="ring" style="background: conic-gradient(from -240deg, #f3d24e 0deg ${ringFillDeg}deg, #1c1c1c ${ringFillDeg}deg 300deg, transparent 300deg 360deg); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 18px), #000 calc(100% - 18px)); mask: radial-gradient(farthest-side, transparent calc(100% - 18px), #000 calc(100% - 18px));"></div>
+          <div class="ring-center">
+            <p class="amount">${money(taxiUberTotal)}</p>
+            <p class="label">Recaudación total</p>
+          </div>
+        </div>
+        <div class="ring-legend">
+          <div class="ring-chip"><span class="dot" style="background:#f3d24e;"></span><div class="txt"><p class="name">Taxi · ${taxiViajes} viajes</p><p class="val">${money(taxiTotal)}</p></div></div>
+          <div class="ring-chip"><span class="dot" style="background:#1c1c1c;"></span><div class="txt"><p class="name">Uber · ${uberViajes} viajes</p><p class="val">${money(uberTotal)}</p></div></div>
+        </div>
+      </div>
+
+      <div class="chart-card descuentos-card">
+        <p class="descuentos-title">Descuentos</p>
+        <div class="descuentos-chart-wrap">
+          <svg viewBox="0 0 300 60" class="descuentos-line-svg" preserveAspectRatio="none">
+            <path d="${descPathD}" fill="none" stroke="#1c1c1c" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="${descPeakPoint.x}" cy="${descPeakPoint.y}" r="4.5" fill="#1c1c1c" stroke="#fff" stroke-width="2.5"/>
+          </svg>
+          <div class="dark-tooltip" style="left:${(descPeakPoint.x/300*100).toFixed(1)}%; top:${(descPeakPoint.y/60*100).toFixed(1)}%;">${money(descValues[peakDescIdx])}</div>
+        </div>
+        <div class="descuentos-chart-labels">
+          ${categorias.map((c,i) => `<span class="${i===peakDescIdx ? 'peak-lbl' : ''}">${c}</span>`).join('')}
+        </div>
+        <div class="descuentos-pct-row">
+          <span class="descuentos-pct">${descuentosPct}%</span>
+          <span class="descuentos-pct-label">de la facturación ${tituloTotal.toLowerCase()}</span>
+        </div>
+        <p class="descuentos-monto">Total descontado por los choferes: ${money(descuentosTotal)}</p>
+      </div>
+
+      <div class="chart-card combustible-dark-card">
+        <div class="dark-card-header">
+          <p class="dark-card-title">Cuenta corriente</p>
+          <span class="dark-card-sub">${tituloTotal}: ${money(ccTotal)} (${ccPct}%)</span>
+        </div>
+        <div class="dark-chart-wrap">
+          <svg viewBox="0 0 300 90" class="dark-line-svg" preserveAspectRatio="none">
+            <path d="${ccPathD}" fill="none" stroke="#6d8bff" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="${ccPeakPoint.x}" cy="${ccPeakPoint.y}" r="4.5" fill="#1c1c1c" stroke="#6d8bff" stroke-width="2.5"/>
+          </svg>
+          <div class="dark-tooltip" style="left:${(ccPeakPoint.x/300*100).toFixed(1)}%; top:${(ccPeakPoint.y/90*100).toFixed(1)}%;">${money(ccValues[peakCCIdx])}</div>
+        </div>
+        <div class="dark-chart-labels">
+          ${categorias.map((c,i) => `<span class="${i===peakCCIdx ? 'peak-lbl' : ''}">${c}</span>`).join('')}
+        </div>
+      </div>
+
+      <div class="chart-card combustible-dark-card" id="tarjeta-comisiones" style="cursor:pointer;">
+        <div class="dark-card-header">
+          <p class="dark-card-title">Comisiones</p>
+          <span class="dark-card-sub">${tituloTotal}</span>
+        </div>
+        <div class="dark-chart-wrap" style="margin:20px 0 4px;">
+          <svg viewBox="0 0 300 90" class="dark-line-svg" preserveAspectRatio="none">
+            <path d="${comPathD}" fill="none" stroke="#f3d24e" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <p style="font-size:24px; font-weight:500; color:#fff; margin:6px 0 0;">${money(comisionesFlota)}</p>
+        <p style="font-size:11px; color:#9a9a96; margin:2px 0 0;">Total pagado a choferes · tocá para ver el detalle</p>
+      </div>
+
+      <div class="chart-card combustible-dark-card" id="tarjeta-service" style="cursor:pointer;">
+        <div class="dark-card-header">
+          <p class="dark-card-title">Service</p>
+          <span class="dark-card-sub">${tituloTotal}</span>
+        </div>
+        <div class="dark-chart-wrap" style="margin:20px 0 4px;">
+          <svg viewBox="0 0 300 90" class="dark-line-svg" preserveAspectRatio="none">
+            <path d="${servPathD}" fill="none" stroke="#f3d24e" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <p style="font-size:24px; font-weight:500; color:#fff; margin:6px 0 0;">${serviceCount} service${serviceCount===1?'':'s'} cargados</p>
+        <p style="font-size:11px; color:#9a9a96; margin:2px 0 0;">Tocá para ver el detalle por móvil</p>
+      </div>
+
+      <div class="chart-card combustible-dark-card" id="tarjeta-comprobantes" style="cursor:pointer;">
+        <div class="dark-card-header">
+          <p class="dark-card-title">Comprobantes</p>
+          <span class="dark-card-sub">${tituloTotal}</span>
+        </div>
+        <p style="font-size:24px; font-weight:500; color:#fff; margin:12px 0 0;">${comprobantesCount} foto${comprobantesCount===1?'':'s'} cargadas</p>
+        <div class="comprobantes-strip">
+          <div class="strip-thumb"></div>
+          <div class="strip-thumb"></div>
+          <div class="strip-thumb"></div>
+          ${comprobantesCount > 3 ? `<div class="strip-thumb" style="display:flex; align-items:center; justify-content:center; font-size:10px; color:#9a9a96; font-weight:600;">+${comprobantesCount-3}</div>` : ''}
+        </div>
+        <p style="font-size:11px; color:#9a9a96; margin:8px 0 0;">Tocá para ver el detalle por chofer</p>
+      </div>
+    `;
+
+    document.getElementById('tarjeta-comisiones').addEventListener('click', abrirComisionesModal);
+    document.getElementById('tarjeta-service').addEventListener('click', abrirServiceModal);
+    document.getElementById('tarjeta-comprobantes').addEventListener('click', abrirComprobantesModal);
+  }
+
+  /* ============================================================ */
+  /* Reportes: datos de referencia de la flota (choferes/móviles)  */
+  /* ============================================================ */
+  const MOVILES_FLOTA = [
+    { movil: '07', chofer: 'Rodríguez, Marcos' },
+    { movil: '12', chofer: 'Gómez, Pablo' },
+    { movil: '03', chofer: 'Fernández, Iván' },
+    { movil: '15', chofer: 'Silva, Carla' }
+  ];
+  const SERVICE_TEXTOS = [
+    'Cambio de aceite y filtro', 'Pastillas de freno delanteras', 'Alineación y balanceo',
+    'Revisión de frenos, sin novedad', 'Cambio de filtro de aire', 'Rotación de neumáticos',
+    'Cambio de bujías', 'Revisión de suspensión'
+  ];
+
+  function generarFotoPlaceholder(seed){
+    const colores = ['#c9483d','#4d64d9','#2fa85a','#f3d24e','#9a6a3d'];
+    const color = colores[seed % colores.length];
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" fill="${color}"/></svg>`;
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  }
+
+  /* ---- Comisiones ---- */
+  let comisionesModalPeriodo = 'dia';
+
+  function generarComisionesPorChofer(period){
+    let escala;
+    if(period === 'dia') escala = 90000;
+    else if(period === 'mes') escala = 90000*22;
+    else escala = 90000*6;
+    return MOVILES_FLOTA.map(m => {
+      const bruto = escala*0.4 + rand()*escala*0.5;
+      const viajes = period === 'dia' ? 5 + Math.floor(rand()*10) : (period === 'mes' ? 120 + Math.floor(rand()*150) : 30 + Math.floor(rand()*40));
+      return { nombre: m.chofer, bruto, viajes, comision: bruto*0.35 };
+    }).sort((a,b) => b.comision - a.comision);
+  }
+
+  function renderComisionesModal(period){
+    document.getElementById('comisiones-modal-filter').querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.period === period));
+    const choferes = generarComisionesPorChofer(period);
+    document.getElementById('comisiones-modal-body').innerHTML = choferes.map(c => `
+      <div class="modal-list-row" style="cursor:default;">
+        <div class="row-avatar"></div>
+        <div class="row-info">
+          <p class="row-name">${c.nombre}</p>
+          <p class="row-sub">Sobre ${money(c.bruto)} bruto · ${c.viajes} viajes</p>
+        </div>
+        <p class="row-val">${money(c.comision)}</p>
+      </div>
+    `).join('');
+  }
+
+  function abrirComisionesModal(){
+    renderComisionesModal(comisionesModalPeriodo);
+    document.getElementById('comisiones-modal').classList.add('active');
+  }
+
+  /* ---- Service por móvil ---- */
+  let serviceModalData = [];
+
+  function generarServicePorMovil(period){
+    const maxDias = period === 'dia' ? 1 : (period === 'mes' ? 31 : 7);
+    return MOVILES_FLOTA.map(m => {
+      const cantidad = period === 'dia' ? Math.floor(rand()*2) : (period === 'mes' ? 1 + Math.floor(rand()*6) : Math.floor(rand()*3));
+      const entradas = [];
+      for(let i = 0; i < cantidad; i++){
+        const diasAtras = Math.floor(rand()*maxDias);
+        const fecha = new Date();
+        fecha.setDate(fecha.getDate() - diasAtras);
+        const choferAzar = MOVILES_FLOTA[Math.floor(rand()*MOVILES_FLOTA.length)].chofer;
+        entradas.push({ fecha, chofer: choferAzar, texto: SERVICE_TEXTOS[Math.floor(rand()*SERVICE_TEXTOS.length)] });
+      }
+      entradas.sort((a,b) => b.fecha - a.fecha);
+      return { movil: m.movil, entradas };
+    });
+  }
+
+  function abrirServiceModal(){
+    serviceModalData = generarServicePorMovil(reportesPeriodoActual);
+    const cont = document.getElementById('service-modal-body');
+    cont.innerHTML = serviceModalData.map((m, i) => `
+      <div class="modal-list-row" data-idx="${i}">
+        <div class="row-avatar square">${m.movil}</div>
+        <div class="row-info">
+          <p class="row-name">Móvil #${m.movil} · ${m.entradas.length} service${m.entradas.length === 1 ? '' : 's'}</p>
+          <p class="row-sub">${m.entradas.length ? m.entradas[0].texto + ' — ' + m.entradas[0].chofer.split(',')[1].trim() : 'Sin services en el período'}</p>
+        </div>
+        <i class="ti ti-chevron-right row-chev"></i>
+      </div>
+    `).join('');
+    cont.querySelectorAll('.modal-list-row').forEach(row => {
+      row.addEventListener('click', function(){
+        abrirServiceMovilModal(serviceModalData[parseInt(row.dataset.idx, 10)]);
+      });
+    });
+    document.getElementById('service-modal').classList.add('active');
+  }
+
+  function abrirServiceMovilModal(movilData){
+    document.getElementById('service-movil-modal-title').textContent = `Móvil #${movilData.movil}`;
+    const cont = document.getElementById('service-movil-modal-body');
+    cont.innerHTML = movilData.entradas.length === 0
+      ? `<p style="font-size:12px; color:#9a9a96;">Sin services registrados en este período.</p>`
+      : movilData.entradas.map(e => `
+        <div class="service-entry">
+          <p class="service-entry-date">${diaSemanaFecha(e.fecha)} · ${e.chofer}</p>
+          <p class="service-entry-text">${e.texto}</p>
+        </div>
+      `).join('');
+    document.getElementById('service-modal').classList.remove('active');
+    document.getElementById('service-movil-modal').classList.add('active');
+  }
+
+  /* ---- Comprobantes por chofer (reutiliza el ticket del turno) ---- */
+  let comprobantesModalData = [];
+
+  function generarTurnoMockCompleto(fecha){
+    const taxiEfvo = 8000 + rand()*20000;
+    const taxiTransf = 8000 + rand()*20000;
+    const uberEfvo = 6000 + rand()*18000;
+    const uberTransf = 6000 + rand()*18000;
+    const ingresoEfectivo = taxiEfvo + uberEfvo;
+    const ingresoTransferencia = taxiTransf + uberTransf;
+    const ccTotal = rand() > 0.6 ? 1000 + rand()*4000 : 0;
+    const descuentosCC = ccTotal > 0 && rand() > 0.5 ? ccTotal*0.1 : 0;
+    const descuentos = (500 + rand()*2500) + descuentosCC;
+    const ingresoBruto = ingresoEfectivo + ingresoTransferencia + ccTotal + descuentos;
+    const totalBruto = ingresoEfectivo + ingresoTransferencia + ccTotal;
+    const comisionChofer = totalBruto * 0.35;
+    const saldoTrasComision = totalBruto - comisionChofer;
+    const gastos = totalBruto * (0.04 + rand()*0.08);
+    const aRendir = saldoTrasComision - gastos;
+    const cantidadFotos = 1 + Math.floor(rand()*3);
+    const fotosTicket = [];
+    for(let i = 0; i < cantidadFotos; i++) fotosTicket.push(generarFotoPlaceholder(i + Math.floor(rand()*5)));
+
+    return {
+      fecha, duracionHoras: 4 + rand()*5, viajes: 5 + Math.floor(rand()*14), total: totalBruto,
+      taxiEfvo, taxiTransf, uberEfvo, uberTransf,
+      ingresoEfectivo, ingresoTransferencia, ccTotal, ingresoBruto,
+      descuentos, descuentosCC, totalBruto, comisionChofer, saldoTrasComision, gastos, aRendir,
+      fotosTicket
+    };
+  }
+
+  function generarComprobantesPorChofer(period){
+    const maxDias = period === 'dia' ? 1 : (period === 'mes' ? 31 : 7);
+    return MOVILES_FLOTA.map(m => {
+      const cantidadTurnos = period === 'dia' ? 1 : (period === 'mes' ? 3 + Math.floor(rand()*10) : 1 + Math.floor(rand()*4));
+      const turnos = [];
+      for(let i = 0; i < cantidadTurnos; i++){
+        const diasAtras = period === 'dia' ? 0 : Math.floor(rand()*maxDias);
+        const fecha = new Date();
+        fecha.setDate(fecha.getDate() - diasAtras);
+        turnos.push(generarTurnoMockCompleto(fecha));
+      }
+      turnos.sort((a,b) => b.fecha - a.fecha);
+      return { chofer: m.chofer, turnos };
+    });
+  }
+
+  function abrirComprobantesModal(){
+    comprobantesModalData = generarComprobantesPorChofer(reportesPeriodoActual);
+    const cont = document.getElementById('comprobantes-modal-body');
+    cont.innerHTML = comprobantesModalData.map((c, i) => {
+      const totalFotos = c.turnos.reduce((a,t) => a + t.fotosTicket.length, 0);
+      return `
+        <div class="modal-list-row" data-idx="${i}">
+          <div class="row-avatar"></div>
+          <div class="row-info">
+            <p class="row-name">${c.chofer}</p>
+            <p class="row-sub">${totalFotos} foto${totalFotos === 1 ? '' : 's'} · ${c.turnos.length} turno${c.turnos.length === 1 ? '' : 's'}</p>
+          </div>
+          <i class="ti ti-chevron-right row-chev"></i>
+        </div>
+      `;
+    }).join('');
+    cont.querySelectorAll('.modal-list-row').forEach(row => {
+      row.addEventListener('click', function(){
+        abrirComprobantesChoferModal(comprobantesModalData[parseInt(row.dataset.idx, 10)]);
+      });
+    });
+    document.getElementById('comprobantes-modal').classList.add('active');
+  }
+
+  function abrirComprobantesChoferModal(choferData){
+    document.getElementById('comprobantes-chofer-modal-title').textContent = choferData.chofer;
+    const cont = document.getElementById('comprobantes-chofer-modal-body');
+    if(choferData.turnos.length === 0){
+      cont.innerHTML = `<p style="font-size:12px; color:#9a9a96;">Sin comprobantes en este período.</p>`;
+    } else {
+      cont.innerHTML = choferData.turnos.map((t, i) => `
+        <div class="modal-list-row" data-idx="${i}">
+          <div class="row-avatar square"><i class="ti ti-receipt" style="font-size:15px;"></i></div>
+          <div class="row-info">
+            <p class="row-name">${diaSemanaFecha(t.fecha)}</p>
+            <p class="row-sub">${t.fotosTicket.length} foto${t.fotosTicket.length === 1 ? '' : 's'} · ${money(t.totalBruto)}</p>
+          </div>
+          <i class="ti ti-chevron-right row-chev"></i>
+        </div>
+      `).join('');
+      cont.querySelectorAll('.modal-list-row').forEach(row => {
+        row.addEventListener('click', function(){
+          document.getElementById('comprobantes-chofer-modal').classList.remove('active');
+          mostrarTicketTurno(choferData.turnos[parseInt(row.dataset.idx, 10)]);
+        });
+      });
+    }
+    document.getElementById('comprobantes-modal').classList.remove('active');
+    document.getElementById('comprobantes-chofer-modal').classList.add('active');
+  }
+
+  /* ============================================================ */
+  /* Gestión de choferes (Perfil del dueño): alta, edición, baja    */
+  /* ============================================================ */
+  let choferesFlota = [
+    { id: 1, nombre: 'Rodríguez, Marcos', telefono: '351 555-0107', foto: 'https://i.pravatar.cc/100?img=12' },
+    { id: 2, nombre: 'Gómez, Pablo', telefono: '351 555-0112', foto: 'https://i.pravatar.cc/100?img=47' },
+    { id: 3, nombre: 'Fernández, Iván', telefono: '351 555-0103', foto: 'https://i.pravatar.cc/100?img=33' },
+    { id: 4, nombre: 'Silva, Carla', telefono: '351 555-0115', foto: 'https://i.pravatar.cc/100?img=25' }
+  ];
+  let choferesNextId = 5;
+  let choferEnEdicionId = null;
+  let fotoChoferFormPendiente = null;
+
+  function renderListaChoferesFlota(){
+    const cont = document.getElementById('flota-choferes-list');
+    if(!cont) return;
+    cont.innerHTML = choferesFlota.map(c => `
+      <div class="flota-row" data-id="${c.id}">
+        <img class="flota-row-avatar" src="${c.foto || 'https://i.pravatar.cc/100?img=1'}" alt="">
+        <div class="flota-row-info">
+          <p class="flota-row-name">${c.nombre}</p>
+          <p class="flota-row-phone">${c.telefono || 'Sin teléfono'}</p>
+        </div>
+        <i class="ti ti-pencil" style="font-size:14px; color:#9a9a96;"></i>
+      </div>
+    `).join('');
+    cont.querySelectorAll('.flota-row').forEach(row => {
+      row.addEventListener('click', function(){
+        const chofer = choferesFlota.find(c => c.id === parseInt(row.dataset.id, 10));
+        abrirFormChofer(chofer);
+      });
+    });
+  }
+
+  function abrirFormChofer(chofer){
+    choferEnEdicionId = chofer ? chofer.id : null;
+    fotoChoferFormPendiente = chofer ? chofer.foto : null;
+    document.getElementById('chofer-form-title').textContent = chofer ? 'Editar chofer' : 'Agregar chofer';
+    document.getElementById('input-chofer-nombre').value = chofer ? chofer.nombre : '';
+    document.getElementById('input-chofer-telefono').value = chofer ? chofer.telefono : '';
+    document.getElementById('chofer-form-error').classList.remove('show');
+    const preview = document.getElementById('preview-chofer-foto');
+    if(fotoChoferFormPendiente){
+      preview.src = fotoChoferFormPendiente;
+      preview.style.display = 'block';
+    } else {
+      preview.style.display = 'none';
+    }
+    document.getElementById('btn-eliminar-chofer').style.display = chofer ? 'inline-block' : 'none';
+    document.getElementById('btn-eliminar-chofer').textContent = 'Eliminar chofer';
+    document.getElementById('btn-eliminar-chofer').dataset.confirmando = '0';
+    document.getElementById('chofer-form-modal').classList.add('active');
+  }
+
+  function guardarChoferForm(){
+    const inputNombre = document.getElementById('input-chofer-nombre');
+    const inputTelefono = document.getElementById('input-chofer-telefono');
+    const nombre = inputNombre.value.trim();
+    const telefono = inputTelefono.value.trim();
+    if(!nombre || !telefono){
+      document.getElementById('chofer-form-error').classList.add('show');
+      return;
+    }
+    if(choferEnEdicionId){
+      const c = choferesFlota.find(c => c.id === choferEnEdicionId);
+      c.nombre = nombre;
+      c.telefono = telefono;
+      if(fotoChoferFormPendiente) c.foto = fotoChoferFormPendiente;
+    } else {
+      choferesFlota.push({ id: choferesNextId++, nombre, telefono, foto: fotoChoferFormPendiente || `https://i.pravatar.cc/100?img=${20 + Math.floor(Math.random()*40)}` });
+    }
+    document.getElementById('chofer-form-modal').classList.remove('active');
+    renderListaChoferesFlota();
+  }
+
+  function eliminarChoferForm(){
+    const btn = document.getElementById('btn-eliminar-chofer');
+    if(btn.dataset.confirmando !== '1'){
+      btn.dataset.confirmando = '1';
+      btn.textContent = '¿Seguro? Tocá de nuevo para eliminar';
+      return;
+    }
+    choferesFlota = choferesFlota.filter(c => c.id !== choferEnEdicionId);
+    btn.dataset.confirmando = '0';
+    document.getElementById('chofer-form-modal').classList.remove('active');
+    renderListaChoferesFlota();
+  }
+
+  function renderPerfilDueno(){
+    const cont = document.getElementById('dueno-perfil-card');
+    if(!cont) return;
+    const cantMoviles = 6 + Math.floor(Math.random() * 10);
+    cont.innerHTML = `
+      <div class="profile-card">
+        <img class="profile-avatar" src="https://i.pravatar.cc/160?img=68" alt="">
+        <p class="profile-name">Juan Manuel Ibáñez</p>
+        <p class="profile-role">Dueño de flota</p>
+        <div class="profile-grid">
+          <div class="profile-item"><span class="lbl">Flota</span><p class="val">${cantMoviles} móviles</p></div>
+          <div class="profile-item"><span class="lbl">Plan</span><p class="val">AppJuan Pro</p></div>
+          <div class="profile-item"><span class="lbl">CUIT</span><p class="val">20-28456123-4</p></div>
+          <div class="profile-item"><span class="lbl">Ciudad</span><p class="val">Córdoba</p></div>
+          <div class="profile-item"><span class="lbl">Teléfono</span><p class="val">351 555-0199</p></div>
+          <div class="profile-item"><span class="lbl">Miembro desde</span><p class="val">2023</p></div>
+        </div>
+      </div>
+
+      <div class="flota-list-card">
+        <p class="flota-list-title">Choferes de la flota</p>
+        <div id="flota-choferes-list"></div>
+        <button type="button" class="btn-agregar-chofer" id="btn-agregar-chofer"><i class="ti ti-plus" style="font-size:14px;"></i>Agregar chofer</button>
+      </div>
+    `;
+    renderListaChoferesFlota();
+    document.getElementById('btn-agregar-chofer').addEventListener('click', function(){ abrirFormChofer(null); });
+  }
+
+  /* ============================================================ */
+  /* ASISTENTE: informe de la empresa + chat con datos reales       */
+  /* ============================================================ */
+  let empresaSnapshot = null;
+
+  function generarSnapshotEmpresa(){
+    const taxiTotal = 90000 + Math.random()*60000;
+    const uberTotal = 55000 + Math.random()*55000;
+    const totalDia = taxiTotal + uberTotal;
+    const transfPct = 38 + Math.random()*18;
+    const costosPct = 15 + Math.random()*10;
+    const netaPct = 100 - costosPct;
+    const combustibleMonto = 12000 + Math.random()*10000;
+    const combustiblePctSobreFact = (combustibleMonto/totalDia*100);
+    const descuentosPct = 4 + Math.random()*9;
+    const descuentosMonto = totalDia * (descuentosPct/100);
+    const gastosPct = 6 + Math.random()*6;
+    const gastosMonto = totalDia * (gastosPct/100);
+    const ccPct = 2 + Math.random()*5;
+    const ccMonto = totalDia * (ccPct/100);
+    const choferes = [
+      { nombre: 'Rodríguez, Marcos', alias: ['marcos','rodriguez','rodríguez'], total: 97500 + Math.random()*8000, enServicio: true },
+      { nombre: 'Gómez, Pablo', alias: ['pablo','gomez','gómez'], total: 61200 + Math.random()*8000, enServicio: false },
+      { nombre: 'Fernández, Iván', alias: ['ivan','iván','fernandez','fernández'], total: 121100 + Math.random()*8000, enServicio: true },
+      { nombre: 'Silva, Carla', alias: ['carla','silva'], total: 38600 + Math.random()*8000, enServicio: false },
+    ];
+    // repartimos el total de descuentos, combustible, gastos y cta cte entre los choferes, proporcional a lo que facturó cada uno (con algo de ruido)
+    const pesoTotal = choferes.reduce((a,c) => a + c.total * (0.6 + Math.random()*0.8), 0);
+    choferes.forEach(c => {
+      c._peso = c.total * (0.6 + Math.random()*0.8);
+      c.descuento = descuentosMonto * (c._peso / pesoTotal);
+      c.combustible = combustibleMonto * (c._peso / pesoTotal) * (0.7 + Math.random()*0.6);
+      c.gastos = gastosMonto * (c._peso / pesoTotal) * (0.7 + Math.random()*0.6);
+      c.cuentaCorriente = Math.random() > 0.5 ? ccMonto * (c._peso / pesoTotal) * (0.6 + Math.random()*0.8) : 0;
+      c.viajes = 6 + Math.floor(Math.random()*10);
+      c.comision = c.total * 0.35;
+      c.aRendir = (c.total - c.comision) - c.gastos;
+    });
+
+    const mejorChofer = choferes.reduce((a,b) => b.total > a.total ? b : a);
+    const peorChofer = choferes.reduce((a,b) => b.total < a.total ? b : a);
+    const fueraServicio = choferes.filter(c => !c.enServicio).length;
+    const crecimientoVsAyer = -6 + Math.random()*18;
+    const horaPico = ['12:00–14:00','18:00–20:00','20:00–22:00'][Math.floor(Math.random()*3)];
+    const totalSemana = totalDia * (5.5 + Math.random()*1.5);
+    const totalMes = totalSemana * (4 + Math.random()*0.6);
+    const comisionesFlota = totalDia * 0.35;
+    const aRendirFlota = (totalDia - comisionesFlota) - gastosMonto;
+
+    return {
+      taxiTotal, uberTotal, totalDia, totalSemana, totalMes, transfPct, costosPct, netaPct,
+      combustibleMonto, combustiblePctSobreFact, descuentosPct, descuentosMonto,
+      gastosMonto, gastosPct, ccMonto, ccPct, comisionesFlota, aRendirFlota,
+      choferes, mejorChofer, peorChofer, fueraServicio, crecimientoVsAyer, horaPico
+    };
+  }
+
+  function buscarChoferPorNombre(texto){
+    const t = texto.toLowerCase();
+    if(!empresaSnapshot) return null;
+    return empresaSnapshot.choferes.find(c => c.alias.some(a => t.includes(a))) || null;
+  }
+
+  function renderInformeAsistente(){
+    const cont = document.getElementById('asistente-informe');
+    if(!cont) return;
+    empresaSnapshot = generarSnapshotEmpresa();
+    const d = empresaSnapshot;
+
+    const buenos = [
+      `La recaudación total de hoy fue de ${money(d.totalDia)}, ${d.crecimientoVsAyer >= 0 ? 'un ' + d.crecimientoVsAyer.toFixed(1) + '% más' : 'un ' + Math.abs(d.crecimientoVsAyer).toFixed(1) + '% menos'} que ayer.`,
+      `El margen neto se ubica en ${d.netaPct.toFixed(1)}%, un nivel saludable para el negocio.`,
+      `${d.mejorChofer.nombre} lidera la flota con ${money(d.mejorChofer.total)} recaudados hoy.`,
+      `Los pagos por transferencia ya representan el ${d.transfPct.toFixed(0)}% de la facturación, señal de digitalización.`,
+      `Después de pagar comisiones y gastos, hoy tenés que recibir ${money(d.aRendirFlota)} de rendición entre todos los choferes.`
+    ];
+
+    const malos = [
+      `Los descuentos aplicados equivalen al ${d.descuentosPct.toFixed(1)}% de la facturación (${money(d.descuentosMonto)}), por encima del 5% recomendado.`,
+      `El gasto en combustible (${money(d.combustibleMonto)}) representa el ${d.combustiblePctSobreFact.toFixed(1)}% de lo recaudado en el día.`,
+      `${d.peorChofer.nombre} recaudó ${money(d.peorChofer.total)}, muy por debajo del promedio de la flota.`,
+      `Hay ${money(d.ccMonto)} en cuenta corriente sin cobrar, el ${d.ccPct.toFixed(1)}% de la facturación de hoy.`,
+      `Los gastos de la flota (${money(d.gastosMonto)}) son el ${d.gastosPct.toFixed(1)}% de lo recaudado, presionando lo que queda para rendir.`
+    ];
+
+    const consejos = [
+      `Revisar con ${d.peorChofer.nombre} los motivos de la baja recaudación de hoy.`,
+      `Poner un límite de alerta cuando el combustible supere el 15% de lo recaudado en el día.`,
+      `Reforzar la flota en el horario de mayor demanda (${d.horaPico}) para no perder viajes.`
+    ];
+
+    const buildList = (items, cls) => items.map((t,i) => `
+      <div class="report-item">
+        <span class="report-bullet">${cls === 'good' ? '✓' : (cls === 'bad' ? '!' : (i+1))}</span>
+        <p>${t}</p>
+      </div>
+    `).join('');
+
+    cont.innerHTML = `
+      <div class="report-card good">
+        <div class="report-head"><div class="report-icon"><i class="ti ti-mood-smile"></i></div><p class="report-head-title">Lo que va bien</p></div>
+        ${buildList(buenos, 'good')}
+      </div>
+      <div class="report-card bad">
+        <div class="report-head"><div class="report-icon"><i class="ti ti-alert-triangle"></i></div><p class="report-head-title">Necesita atención</p></div>
+        ${buildList(malos, 'bad')}
+      </div>
+      <div class="report-card tips">
+        <div class="report-head"><div class="report-icon"><i class="ti ti-bulb"></i></div><p class="report-head-title">Consejos del asistente</p></div>
+        ${buildList(consejos, 'tips')}
+      </div>
+    `;
+  }
+
+  /* ============================================================ */
+  /* Setup general                                                  */
+  /* ============================================================ */
+  document.addEventListener('DOMContentLoaded', function(){
+    // Login: elegir rol
+    document.querySelectorAll('.role-btn[data-role]').forEach(btn => {
+      btn.addEventListener('click', function(){
+        goTo(btn.dataset.role);
+      });
+    });
+
+    // Cerrar sesión (ambas pantallas)
+    document.querySelectorAll('[data-action="logout"]').forEach(btn => {
+      btn.addEventListener('click', logout);
+    });
+
+    // Tarjetas de choferes (dueño): expandir/contraer detalle
+    document.querySelectorAll('#screen-dueno .card').forEach(card => {
+      card.addEventListener('click', function(){
+        card.querySelector('.card-detail').classList.toggle('open');
+      });
+    });
+
+    // Comentarios existentes
+    bindCommentLinks();
+
+    // Botón "+" para agregar viaje
+    document.getElementById('btn-agregar-viaje').addEventListener('click', agregarViaje);
+    document.querySelectorAll('#tipo-toggle .tipo-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', function(){ seleccionarTipoViaje(btn.dataset.tipo); });
+    });
+    document.getElementById('btn-agregar-gasto').addEventListener('click', agregarGasto);
+    document.getElementById('btn-agregar-cc').addEventListener('click', agregarCC);
+    document.getElementById('discount-toggle').addEventListener('click', function(){
+      document.getElementById('discount-box').classList.toggle('open');
+    });
+    document.getElementById('discount-toggle-cc').addEventListener('click', function(){
+      document.getElementById('discount-box-cc').classList.toggle('open');
+    });
+
+    // Registro de SERVICE del vehículo (persistido en este celular con localStorage)
+    document.getElementById('btn-guardar-service').addEventListener('click', agregarServiceEntry);
+    document.getElementById('input-service').addEventListener('keydown', function(e){
+      if(e.key === 'Enter' && e.ctrlKey) agregarServiceEntry();
+    });
+
+    // Filtro Día/Semana/Mes del gráfico de comisiones
+    document.getElementById('comisiones-filter-row').querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', function(){
+        document.getElementById('comisiones-filter-row').querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderComisionesChart(btn.dataset.period);
+      });
+    });
+
+    // Comenzar / finalizar turno
+    document.getElementById('btn-comenzar-turno').addEventListener('click', abrirModalMovil);
+    document.getElementById('btn-cancelar-movil').addEventListener('click', function(){
+      document.getElementById('movil-modal').classList.remove('active');
+    });
+    document.getElementById('btn-confirmar-movil').addEventListener('click', confirmarMovilYComenzar);
+    document.getElementById('input-movil-modal').addEventListener('keydown', function(e){
+      if(e.key === 'Enter') confirmarMovilYComenzar();
+    });
+    document.getElementById('btn-finalizar-turno').addEventListener('click', finalizarTurno);
+    document.getElementById('btn-cancelar-finalizar').addEventListener('click', function(){
+      document.getElementById('finalizar-modal').classList.remove('active');
+    });
+    document.getElementById('btn-confirmar-finalizar').addEventListener('click', confirmarFinalizarTurno);
+    document.getElementById('btn-cerrar-ver-turno').addEventListener('click', function(){
+      document.getElementById('ver-turno-modal').classList.remove('active');
+    });
+
+    // Foto del ticket del reloj
+    document.getElementById('btn-sacar-foto-reloj').addEventListener('click', function(){
+      document.getElementById('input-foto-reloj').click();
+    });
+    document.getElementById('input-foto-reloj').addEventListener('change', function(e){
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev){
+        fotosTicketPendientes.push(ev.target.result);
+        renderFotosReloj();
+        document.getElementById('input-foto-reloj').value = '';
+      };
+      reader.readAsDataURL(file);
+    });
+    document.getElementById('btn-cerrar-foto-full').addEventListener('click', function(){
+      document.getElementById('foto-full-modal').classList.remove('active');
+    });
+
+    // Edición del monto de un viaje ya cargado
+    document.getElementById('btn-cancelar-editar-monto').addEventListener('click', function(){
+      document.getElementById('editar-monto-modal').classList.remove('active');
+      viajeEnEdicion = null;
+    });
+    document.getElementById('btn-guardar-editar-monto').addEventListener('click', guardarEdicionMonto);
+    document.getElementById('input-editar-monto').addEventListener('keydown', function(e){
+      if(e.key === 'Enter') guardarEdicionMonto();
+    });
+
+    // Navegación inferior: chofer
+    document.getElementById('chofer-nav').querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', function(){
+        switchTab(document.getElementById('chofer-nav'), item.dataset.view);
+      });
+    });
+
+    // Navegación inferior: dueño
+    document.querySelector('#screen-dueno .bottom-nav').querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', function(){
+        switchTab(document.querySelector('#screen-dueno .bottom-nav'), item.dataset.view);
+      });
+    });
+
+    // Filtro Día/Semana/Mes en Reportes
+    document.getElementById('reportes-filter-row').querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', function(){
+        document.getElementById('reportes-filter-row').querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderReportes(btn.dataset.period);
+      });
+    });
+
+    // Selector de mes (solo visible con el filtro "Mes"): mismo mes -> misma info en toda la sección
+    poblarSelectorMeses();
+    document.getElementById('sel-reportes-month').addEventListener('change', function(){
+      reportesMonthKey = this.value;
+      renderReportes('mes');
+    });
+
+    // Modal de Comisiones (con su propio filtro Día/Semana/Mes)
+    document.getElementById('comisiones-modal-filter').querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', function(){
+        comisionesModalPeriodo = btn.dataset.period;
+        renderComisionesModal(comisionesModalPeriodo);
+      });
+    });
+    document.getElementById('btn-cerrar-comisiones').addEventListener('click', function(){
+      document.getElementById('comisiones-modal').classList.remove('active');
+    });
+
+    // Modal de Service (móviles → historial del móvil)
+    document.getElementById('btn-cerrar-service').addEventListener('click', function(){
+      document.getElementById('service-modal').classList.remove('active');
+    });
+    document.getElementById('btn-cerrar-service-movil').addEventListener('click', function(){
+      document.getElementById('service-movil-modal').classList.remove('active');
+    });
+    document.getElementById('btn-volver-service-movil').addEventListener('click', function(){
+      document.getElementById('service-movil-modal').classList.remove('active');
+      document.getElementById('service-modal').classList.add('active');
+    });
+
+    // Modal de Comprobantes (choferes → turnos con fotos → ticket completo)
+    document.getElementById('btn-cerrar-comprobantes').addEventListener('click', function(){
+      document.getElementById('comprobantes-modal').classList.remove('active');
+    });
+    document.getElementById('btn-cerrar-comprobantes-chofer').addEventListener('click', function(){
+      document.getElementById('comprobantes-chofer-modal').classList.remove('active');
+    });
+    document.getElementById('btn-volver-comprobantes-chofer').addEventListener('click', function(){
+      document.getElementById('comprobantes-chofer-modal').classList.remove('active');
+      document.getElementById('comprobantes-modal').classList.add('active');
+    });
+
+    // Formulario de alta/edición de chofer
+    document.getElementById('btn-chofer-foto-btn').addEventListener('click', function(){
+      document.getElementById('input-chofer-foto').click();
+    });
+    document.getElementById('input-chofer-foto').addEventListener('change', function(e){
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev){
+        fotoChoferFormPendiente = ev.target.result;
+        const preview = document.getElementById('preview-chofer-foto');
+        preview.src = fotoChoferFormPendiente;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    });
+    document.getElementById('btn-cancelar-chofer-form').addEventListener('click', function(){
+      document.getElementById('chofer-form-modal').classList.remove('active');
+    });
+    document.getElementById('btn-guardar-chofer-form').addEventListener('click', guardarChoferForm);
+    document.getElementById('btn-eliminar-chofer').addEventListener('click', eliminarChoferForm);
+
+    // Datos random iniciales
+    generarHistorialInicial();
+    renderServiceHistorial();
+    renderPerfilChofer();
+    renderReportes('dia');
+    renderPerfilDueno();
+    renderInformeAsistente();
+  });
+</script>
+
+</body>
+</html>
