@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="format-detection" content="telephone=no">
+<title>AppJuan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.48.0/tabler-icons.min.css">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+<div class="loading-overlay" id="loading-overlay">Cargando...</div>
+
+<!-- ============ LOGIN ============ -->
+<div class="screen active" id="screen-login">
+  <div class="content">
+    <div class="login-top">
+      <div class="login-badge"><i class="ti ti-car"></i></div>
+      <h1 class="login-title">AppJuan</h1>
+      <p class="login-subtitle">Gestión de flota de taxis y remises.<br>Ingresá con tu usuario y contraseña.</p>
+      <form id="login-form">
+        <input class="modal-input" id="login-username" type="text" placeholder="Usuario" autocomplete="username" style="margin-bottom:12px;">
+        <input class="modal-input" id="login-password" type="password" placeholder="Contraseña" autocomplete="current-password">
+        <p class="modal-error" id="login-error">Usuario o contraseña incorrectos.</p>
+        <button type="submit" class="start-turno-btn" id="login-submit" style="width:100%; justify-content:center; margin-top:18px;">
+          <i class="ti ti-login-2"></i> Ingresar
+        </button>
+      </form>
+    </div>
+    <p class="login-footer">AppJuan · Gestión de flota</p>
+  </div>
+</div>
+
+<!-- ============ CHOFER ============ -->
+<div class="screen" id="screen-chofer">
+  <div class="content">
+
+    <div class="top-row" style="justify-content:flex-end;">
+      <div class="right-icons">
+        <button class="logout-pill" id="chofer-logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Salir</button>
+        <button class="export-pill" id="btn-finalizar-turno" style="display:none;"><i class="ti ti-player-pause-filled"></i> Finalizar</button>
+      </div>
+    </div>
+
+    <!-- ESTADO: PRE-TURNO -->
+    <div class="chofer-state active" id="chofer-preturno">
+      <div class="preturno-wrap">
+        <div class="preturno-icon"><i class="ti ti-steering-wheel"></i></div>
+        <h1 class="title" style="font-size:26px;">Arrancá tu turno</h1>
+        <p class="subtitle" id="preturno-subtitle" style="margin-bottom:30px;">Iniciá el turno para empezar a cargar viajes.</p>
+        <button class="start-turno-btn" id="btn-comenzar-turno"><i class="ti ti-player-play-filled"></i> Comenzar turno</button>
+      </div>
+    </div>
+
+    <!-- ESTADO: EN TURNO -->
+    <div class="chofer-state" id="chofer-enturno">
+
+      <!-- VISTA: VIAJES -->
+      <div class="chofer-view active" id="chofer-view-viajes">
+        <h1 class="title">Mis viajes</h1>
+        <p class="subtitle" id="chofer-subtitle">Móvil #-- · Desde --:--</p>
+
+        <div class="stats-row">
+          <div class="stat-box taxi"><p class="lbl">Taxi</p><p class="val" id="stat-taxi-total">$0</p><p class="breakdown" id="stat-taxi-breakdown">Efvo $0<br>Transf $0</p></div>
+          <div class="stat-box uber"><p class="lbl">Uber</p><p class="val" id="stat-uber-total">$0</p><p class="breakdown" id="stat-uber-breakdown">Efvo $0<br>Transf $0</p></div>
+          <div class="stat-box turno"><p class="lbl">Turno</p><div class="pill-outline-box"><p class="val" id="stat-turno-time">0.0h</p></div></div>
+          <div class="stat-box viajes"><p class="lbl">Viajes</p><div class="pill-outline-box"><p class="val" id="stat-viajes-count">0</p></div></div>
+        </div>
+
+        <div class="action-card">
+          <div class="tipo-toggle" id="tipo-toggle">
+            <div class="tipo-toggle-bg" id="tipo-toggle-bg"></div>
+            <button type="button" class="tipo-toggle-btn active" data-tipo="Taxi">Taxi</button>
+            <button type="button" class="tipo-toggle-btn" data-tipo="Uber">Uber</button>
+          </div>
+          <div class="quickadd" style="margin-bottom:12px;">
+            <input id="input-monto" placeholder="Monto del viaje" inputmode="numeric" style="flex:1.3;">
+            <select id="sel-medio"><option>Efectivo</option><option>Transferencia</option></select>
+          </div>
+          <p class="discount-toggle" id="discount-toggle">+ Agregar descuento a este viaje</p>
+          <div class="discount-box" id="discount-box">
+            <input id="input-descuento" placeholder="Monto del descuento" inputmode="numeric">
+          </div>
+          <button id="btn-agregar-viaje" class="confirm-btn">Confirmar viaje</button>
+        </div>
+
+        <div class="section-lbl">Viajes de hoy</div>
+        <div class="card-stack" id="viajes-stack"></div>
+      </div>
+
+      <!-- VISTA: GASTOS -->
+      <div class="chofer-view" id="chofer-view-gastos">
+        <h1 class="title">Gastos</h1>
+        <p class="subtitle">Anotá lo que gastaste durante el turno</p>
+
+        <div class="quickadd">
+          <input id="input-gasto-concepto" placeholder="¿En qué gastaste?" style="flex:1.4 1 100px;">
+          <input id="input-gasto-monto" placeholder="Monto" inputmode="numeric">
+          <select id="sel-gasto-categoria" style="flex:0 0 110px;">
+            <option value="otro">Otro</option>
+            <option value="combustible">Combustible</option>
+          </select>
+          <button id="btn-agregar-gasto">+</button>
+        </div>
+
+        <div class="service-card">
+          <p class="service-card-title">SERVICE</p>
+          <p class="service-card-sub">Anotá el desglose del service que le hiciste al auto hoy</p>
+          <textarea id="input-service" placeholder="Ej: cambio de aceite y filtro, pastillas de freno delanteras..."></textarea>
+          <button id="btn-guardar-service" class="service-save-btn">
+            <i class="ti ti-device-floppy" style="font-size:15px;"></i>
+            <span id="btn-guardar-service-txt">Guardar</span>
+          </button>
+        </div>
+
+        <div class="section-lbl">Historial de service de este móvil</div>
+        <div id="service-historial-list"></div>
+
+        <div class="section-lbl">Gastos de hoy</div>
+        <div class="card-stack" id="gastos-stack"></div>
+      </div>
+
+      <!-- VISTA: CUENTA CORRIENTE -->
+      <div class="chofer-view" id="chofer-view-cc">
+        <h1 class="title">Cuenta corriente</h1>
+        <p class="subtitle">Viajes a clientes que pagan después</p>
+
+        <div class="action-card">
+          <div class="quickadd" style="margin-bottom:8px;">
+            <input id="input-cc-cliente" placeholder="¿Para quién fue el viaje?" style="flex:1.4 1 100px;">
+          </div>
+          <div class="quickadd" style="margin-bottom:12px;">
+            <input id="input-cc-monto" placeholder="Monto" inputmode="numeric">
+          </div>
+          <p class="discount-toggle" id="discount-toggle-cc">+ Agregar descuento a este viaje</p>
+          <div class="discount-box" id="discount-box-cc">
+            <input id="input-cc-descuento" placeholder="Monto del descuento" inputmode="numeric">
+          </div>
+          <button id="btn-agregar-cc" class="confirm-btn">Agregar a Cta Cte</button>
+        </div>
+
+        <div class="section-lbl">Pendientes de cobro</div>
+        <div class="card-stack" id="cc-stack"></div>
+      </div>
+
+      <!-- VISTA: HISTORIAL -->
+      <div class="chofer-view" id="chofer-view-historial">
+        <h1 class="title">Historial</h1>
+        <p class="subtitle">Tus últimos turnos</p>
+        <div id="historial-stack"></div>
+      </div>
+
+      <!-- VISTA: PERFIL -->
+      <div class="chofer-view" id="chofer-view-perfil">
+        <h1 class="title">Mi perfil</h1>
+        <p class="subtitle">Datos del chofer</p>
+        <div id="chofer-perfil-card"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="bottom-nav" id="chofer-nav" style="display:none;">
+    <div class="nav-item active" data-view="chofer-view-viajes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11"/><rect x="2" y="11" width="20" height="6" rx="2"/><circle cx="7.5" cy="17.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="16.5" cy="17.5" r="1.3" fill="currentColor" stroke="none"/></svg><span>Viajes</span></div>
+    <div class="nav-item" data-view="chofer-view-gastos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/></svg><span>Gastos</span></div>
+    <div class="nav-item" data-view="chofer-view-cc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg><span>Cta Cte</span></div>
+    <div class="nav-item" data-view="chofer-view-historial"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg><span>Historial</span></div>
+    <div class="nav-item" data-view="chofer-view-perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>Perfil</span></div>
+  </div>
+
+  <div class="modal-overlay" id="movil-modal">
+    <div class="modal-card">
+      <p class="modal-title">¿En qué móvil salís hoy?</p>
+      <input class="modal-input" id="input-movil-modal" type="text" inputmode="numeric" placeholder="Ej: 07">
+      <p class="modal-error" id="movil-modal-error">Ingresá el número de móvil para continuar</p>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" id="btn-cancelar-movil">Cancelar</button>
+        <button class="modal-btn primary" id="btn-confirmar-movil">Comenzar turno</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="finalizar-modal">
+    <div class="modal-card">
+      <p class="modal-title">¿Finalizar el turno?</p>
+      <div class="modal-scroll-area">
+        <div id="finalizar-modal-body"></div>
+        <div class="ticket-foto-box">
+          <p class="ticket-foto-title">Tickets / comprobantes</p>
+          <p class="ticket-foto-sub">Sacale una foto a cada ticket que quieras dejar registrado</p>
+          <input type="file" accept="image/*" capture="environment" id="input-foto-reloj" style="display:none;" multiple>
+          <div id="fotos-reloj-grid" class="fotos-reloj-grid"></div>
+          <button type="button" id="btn-sacar-foto-reloj" class="ticket-foto-btn">
+            <i class="ti ti-camera" style="font-size:15px;"></i>
+            <span id="btn-sacar-foto-reloj-txt">Agregar foto</span>
+          </button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" id="btn-cancelar-finalizar">Cancelar</button>
+        <button class="modal-btn primary" id="btn-confirmar-finalizar">Finalizar turno</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="editar-monto-modal">
+    <div class="modal-card">
+      <p class="modal-title" id="editar-monto-title">Editar viaje</p>
+      <input class="modal-input" id="input-editar-monto" type="text" inputmode="numeric" placeholder="Monto">
+      <input class="modal-input" id="input-editar-descuento" type="text" inputmode="numeric" placeholder="Descuento (opcional)" style="margin-top:10px;">
+      <textarea class="modal-input" id="input-editar-comentario" placeholder="Comentario (opcional)" style="margin-top:10px; min-height:60px; resize:none; display:none;"></textarea>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" id="btn-cancelar-editar-monto">Cancelar</button>
+        <button class="modal-btn primary" id="btn-guardar-editar-monto">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DUEÑO / ADMIN ============ -->
+<div class="screen" id="screen-dueno">
+  <div class="content">
+
+    <div class="top-row">
+      <h1 class="title" style="font-size:26px; margin:0;" id="dueno-titulo">Choferes</h1>
+      <div class="right-icons">
+        <a class="export-pill" id="btn-export-reportes" style="display:none;" href="#"><i class="ti ti-download"></i> Export</a>
+        <button class="logout-pill" id="dueno-logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Salir</button>
+      </div>
+    </div>
+
+    <!-- VISTA: CHOFERES -->
+    <div class="dueno-view active" id="dueno-view-choferes">
+      <p class="subtitle" id="choferes-subtitle">Estado de la flota hoy</p>
+      <div class="stats-row" id="choferes-stats-row"></div>
+      <div class="section-lbl">Choferes</div>
+      <div class="card-stack" id="choferes-stack"></div>
+    </div>
+
+    <!-- VISTA: REPORTES -->
+    <div class="dueno-view" id="dueno-view-reportes">
+      <p class="subtitle">Facturación y liquidación de la flota</p>
+      <div class="filter-row" id="reportes-filter-row">
+        <button data-period="dia" class="active">Día</button>
+        <button data-period="semana">Semana</button>
+        <button data-period="mes">Mes</button>
+      </div>
+      <div id="reportes-content"></div>
+    </div>
+
+    <!-- VISTA: ASISTENTE -->
+    <div class="dueno-view" id="dueno-view-asistente">
+      <p class="subtitle">Resumen automático del día</p>
+      <div id="asistente-content"></div>
+    </div>
+
+    <!-- VISTA: PERFIL -->
+    <div class="dueno-view" id="dueno-view-perfil">
+      <p class="subtitle">Datos de tu flota</p>
+      <div id="empresa-perfil-card"></div>
+      <div class="flota-list-card">
+        <p class="flota-list-title">Choferes</p>
+        <div id="flota-list"></div>
+        <button class="btn-agregar-chofer" id="btn-agregar-chofer"><i class="ti ti-user-plus"></i> Agregar chofer</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav" id="dueno-nav">
+    <div class="nav-item active" data-view="dueno-view-choferes"><i class="ti ti-users"></i><span>Choferes</span></div>
+    <div class="nav-item" data-view="dueno-view-reportes"><i class="ti ti-chart-bar"></i><span>Reportes</span></div>
+    <div class="nav-item" data-view="dueno-view-asistente"><i class="ti ti-bulb"></i><span>Asistente</span></div>
+    <div class="nav-item" data-view="dueno-view-perfil"><i class="ti ti-settings"></i><span>Perfil</span></div>
+  </div>
+
+  <div class="modal-overlay" id="chofer-form-modal">
+    <div class="modal-card">
+      <p class="modal-title" id="chofer-form-title">Nuevo chofer</p>
+      <div class="modal-scroll-area">
+        <img class="chofer-form-avatar" id="chofer-form-avatar-preview" src="" alt="" style="display:none;">
+        <span class="modal-field-lbl">Nombre y apellido</span>
+        <input class="modal-input" id="chofer-form-nombre" type="text" placeholder="Ej: Rodríguez, Marcos">
+        <span class="modal-field-lbl">Teléfono</span>
+        <input class="modal-input" id="chofer-form-telefono" type="text" placeholder="Ej: 351 555 1234">
+        <span class="modal-field-lbl">Vehículo (opcional)</span>
+        <input class="modal-input" id="chofer-form-vehiculo" type="text" placeholder="Ej: Corolla 2021">
+        <span class="modal-field-lbl">Comisión % (opcional, usa la de la flota si se deja vacío)</span>
+        <input class="modal-input" id="chofer-form-comision" type="text" inputmode="decimal" placeholder="Ej: 35">
+        <span class="modal-field-lbl">Usuario para ingresar</span>
+        <input class="modal-input" id="chofer-form-username" type="text" placeholder="Usuario de acceso" autocomplete="off">
+        <span class="modal-field-lbl" id="chofer-form-password-lbl">Contraseña</span>
+        <input class="modal-input" id="chofer-form-password" type="text" placeholder="Contraseña" autocomplete="off">
+        <p class="modal-error" id="chofer-form-error"></p>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" id="btn-cancelar-chofer-form">Cancelar</button>
+        <button class="modal-btn primary" id="btn-guardar-chofer-form">Guardar</button>
+      </div>
+      <button class="modal-btn danger" id="btn-eliminar-chofer-form" style="display:none; width:100%; margin-top:10px;">Eliminar chofer</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="comisiones-modal">
+    <div class="modal-card">
+      <p class="modal-title">Comisiones por chofer</p>
+      <div class="modal-scroll-area" id="comisiones-modal-body"></div>
+      <div class="modal-actions">
+        <button class="modal-btn primary" id="btn-cerrar-comisiones" style="flex:1;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="service-modal">
+    <div class="modal-card">
+      <p class="modal-title">Service por móvil</p>
+      <div class="modal-scroll-area" id="service-modal-body"></div>
+      <div class="modal-actions">
+        <button class="modal-btn primary" id="btn-cerrar-service" style="flex:1;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- modales compartidos entre chofer y dueño -->
+<div class="modal-overlay" id="ver-turno-modal">
+  <div class="modal-card">
+    <p class="modal-title" id="ver-turno-modal-title">Ticket del turno</p>
+    <div class="modal-scroll-area">
+      <div id="ver-turno-modal-body"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn primary" id="btn-cerrar-ver-turno" style="flex:1;">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-card">
+    <p class="modal-title" id="confirm-modal-title">¿Confirmar?</p>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" id="btn-confirm-modal-no">Cancelar</button>
+      <button class="modal-btn danger" id="btn-confirm-modal-yes">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="foto-full-modal" style="z-index:110;">
+  <div style="position:relative; width:100%; max-width:360px;">
+    <img id="foto-full-img" style="width:100%; border-radius:16px; display:block;">
+    <button id="btn-cerrar-foto-full" style="position:absolute; top:10px; right:10px; width:34px; height:34px; border-radius:50%; background:rgba(0,0,0,0.55); color:#fff; border:none; font-size:15px; cursor:pointer;">✕</button>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/state.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/screens/chofer.js"></script>
+<script src="js/screens/dueno.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Los archivos subidos son imágenes; nunca deben ejecutarse como PHP.
+<IfModule mod_authz_core.c>
+  <FilesMatch "\.(php|phtml|php\d)$">
+    Require all denied
+  </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+  <FilesMatch "\.(php|phtml|php\d)$">
+    Order allow,deny
+    Deny from all
+  </FilesMatch>
+</IfModule>

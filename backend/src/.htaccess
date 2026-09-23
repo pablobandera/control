@@ -1,0 +1,10 @@
+# Este código PHP no debe ser accesible directamente por HTTP bajo ninguna
+# circunstancia (funciona como defensa extra aunque backend/src ya esté
+# fuera del document root, por si el hosting no permite eso).
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Order allow,deny
+  Deny from all
+</IfModule>

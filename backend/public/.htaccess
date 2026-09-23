@@ -1,0 +1,8 @@
+RewriteEngine On
+
+# Si el archivo/carpeta pedido existe de verdad (ej. uploads/foto.jpg), servilo tal cual.
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# Todo lo demás va al front controller.
+RewriteRule ^ index.php [QSA,L]

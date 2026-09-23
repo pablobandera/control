@@ -1,0 +1,11 @@
+# Backend
+backend/.env
+backend/public/uploads/comprobantes/*
+backend/public/uploads/perfiles/*
+!backend/public/uploads/comprobantes/.gitkeep
+!backend/public/uploads/perfiles/.gitkeep
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+*.log
