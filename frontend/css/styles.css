@@ -333,6 +333,15 @@ html, body{
 .chart-card.clickable{ cursor:pointer; }
 .chart-card .chart-title{ font-size:13px; font-weight:600; color:#1c1c1c; margin:0 0 16px; display:flex; justify-content:space-between; align-items:center; }
 
+/* ---- grafico de barras (Mis comisiones, historial del chofer) ---- */
+.bar-chart{ display:flex; align-items:flex-end; gap:8px; height:110px; padding-top:34px; position:relative; }
+.bar-chart::before{ content:''; position:absolute; left:0; right:0; top:56px; border-top:1.5px dotted #d3cfa1; }
+.bar-chart .bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; position:relative; z-index:1; }
+.bar-chart .bar{ width:46%; min-height:2px; border-radius:8px 8px 3px 3px; background:#1c1c1c; }
+.bar-chart .bar.peak{ background:#f3d24e; }
+.bar-chart .bar-lbl{ font-size:9.5px; color:#9a9a96; margin-top:6px; }
+.bar-chart .bar-val{ position:absolute; top:-20px; font-size:9.5px; font-weight:700; color:#1c1c1c; white-space:nowrap; }
+
 /* ---- liquidacion de la flota: solo visible en escritorio (ver .only-desktop) ---- */
 .liquidacion-flota-card{ background:#1c1c1c; }
 .liquidacion-flota-card .chart-title{ color:#fff; }
@@ -610,4 +619,41 @@ html, body{
   #screen-login .login-title{ font-size:54px; }
   #screen-login .login-subtitle{ font-size:16px; margin-bottom:0; }
   #screen-login .login-footer{ margin-top:0; padding-bottom:36px; }
+
+  /* el chat del asistente tiene que centrarse respecto al contenido, no al viewport entero (hay sidebar) */
+  .chat-input-bar{ left:calc(236px + (100% - 236px) / 2); max-width:600px; }
 }
+
+/* ---- asistente: chat con datos reales ---- */
+#dueno-view-asistente{ padding-bottom:150px; }
+.chat-bubble-row{ display:flex; margin-bottom:10px; }
+.chat-bubble-row.user{ justify-content:flex-end; }
+.chat-bubble{ max-width:82%; padding:11px 15px; border-radius:18px; font-size:12.5px; line-height:1.5; }
+.chat-bubble-row.user .chat-bubble{ background:#1c1c1c; color:#fff; border-bottom-right-radius:5px; }
+.chat-bubble-row.assistant .chat-bubble{ background:#faf7ee; color:#3a3a37; border-bottom-left-radius:5px; box-shadow:0 4px 10px rgba(0,0,0,0.05); }
+.chat-thinking{ display:flex; align-items:center; gap:4px; padding:14px 16px; }
+.chat-thinking span{
+  width:6px; height:6px; border-radius:50%; background:#b5b0a0; display:inline-block;
+  animation: thinkingDot 1.2s ease-in-out infinite;
+}
+.chat-thinking span:nth-child(2){ animation-delay:0.2s; }
+.chat-thinking span:nth-child(3){ animation-delay:0.4s; }
+@keyframes thinkingDot{
+  0%, 60%, 100%{ opacity:0.3; transform:translateY(0); }
+  30%{ opacity:1; transform:translateY(-3px); }
+}
+.chat-input-bar{
+  position:fixed; left:50%; transform:translateX(-50%); bottom:72px;
+  width:calc(100% - 24px); max-width:456px;
+  background:#faf7ee; border-radius:999px; padding:6px 6px 6px 18px;
+  display:flex; align-items:center; gap:8px;
+  box-shadow:0 10px 24px rgba(0,0,0,0.15);
+  z-index:39;
+}
+.chat-input-bar input{ flex:1; border:none; background:transparent; font-size:16px; color:#1c1c1c; min-width:0; }
+.chat-input-bar input::placeholder{ color:#9a9a96; }
+.chat-input-bar button{
+  width:40px; height:40px; border-radius:50%; background:#1c1c1c; color:#f3d24e; border:none;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; font-size:16px;
+}
+.chat-input-bar button:disabled{ opacity:0.5; cursor:default; }

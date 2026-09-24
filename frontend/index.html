@@ -155,6 +155,17 @@
       <div class="chofer-view" id="chofer-view-historial">
         <h1 class="title">Historial</h1>
         <p class="subtitle">Tus últimos turnos</p>
+
+        <div class="chart-card">
+          <p class="chart-title">Mis comisiones</p>
+          <div class="filter-row" id="comisiones-filter-row" style="margin-bottom:18px;">
+            <button data-period="dia">Día</button>
+            <button class="active" data-period="semana">Semana</button>
+            <button data-period="mes">Mes</button>
+          </div>
+          <div id="comisiones-chart-content"></div>
+        </div>
+
         <div id="historial-stack"></div>
       </div>
 
@@ -268,6 +279,10 @@
     <div class="dueno-view" id="dueno-view-asistente">
       <p class="subtitle">Resumen automático del día</p>
       <div id="asistente-content"></div>
+
+      <div class="section-lbl" style="margin-top:22px;">Preguntale al asistente</div>
+      <div id="asistente-chat-messages"></div>
+      <div id="asistente-scroll-anchor"></div>
     </div>
 
     <!-- VISTA: PERFIL -->
@@ -283,6 +298,11 @@
       </div>
     </div>
 
+  </div>
+
+  <div class="chat-input-bar" id="asistente-input-bar" style="display:none;">
+    <input id="asistente-input" type="text" placeholder="Preguntale algo al asistente..." autocomplete="off">
+    <button id="asistente-send" type="button"><i class="ti ti-send-2"></i></button>
   </div>
 
   <div class="bottom-nav" id="dueno-nav">

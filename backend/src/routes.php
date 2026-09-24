@@ -25,6 +25,7 @@ $router->get('/auth/me', [AuthController::class, 'me']);
 $router->post('/turnos', [TurnoController::class, 'iniciar']);
 $router->get('/turnos/activo', [TurnoController::class, 'activo']);
 $router->get('/turnos/historial', [TurnoController::class, 'historial']);
+$router->get('/turnos/comisiones', [TurnoController::class, 'comisiones']);
 $router->post('/turnos/{id}/cerrar', [TurnoController::class, 'cerrar']);
 $router->get('/turnos/{id}', [TurnoController::class, 'ver']);
 
@@ -59,6 +60,7 @@ $router->get('/reportes/comprobantes', [ReporteController::class, 'comprobantes'
 $router->get('/reportes', [ReporteController::class, 'kpis']);
 
 $router->get('/asistente/informe', [AsistenteController::class, 'informe']);
+$router->post('/asistente/chat', [AsistenteController::class, 'chat']);
 
 $router->get('/empresa', [EmpresaController::class, 'ver']);
 $router->put('/empresa', [EmpresaController::class, 'actualizar']);

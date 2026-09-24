@@ -5,6 +5,7 @@ const ChoferScreen = (() => {
   let editando = null; // { type: 'viaje'|'gasto'|'cc', id }
   let timerId = null;
   let eventsBound = false;
+  let comisionesPeriodo = 'semana';
 
   function el(id) { return document.getElementById(id); }
 
@@ -234,7 +235,33 @@ const ChoferScreen = (() => {
     }
   }
 
+  async function renderComisionesChart(periodo) {
+    comisionesPeriodo = periodo;
+    document.querySelectorAll('#comisiones-filter-row button').forEach((b) => b.classList.toggle('active', b.dataset.period === periodo));
+    const cont = el('comisiones-chart-content');
+    try {
+      const data = await Api.get('/turnos/comisiones', { periodo });
+      const max = Math.max(1, ...data.buckets.map((b) => b.comision));
+      cont.innerHTML = `
+        <div class="bar-chart">
+          ${data.buckets.map((b, i) => {
+            const heightPct = Math.max(2, Math.round((b.comision / max) * 100));
+            const esPico = b.comision === max && max > 0;
+            return `
+              <div class="bar-col">
+                ${b.comision > 0 ? `<span class="bar-val">${Utils.money(b.comision)}</span>` : ''}
+                <div class="bar${esPico ? ' peak' : ''}" style="height:${heightPct}%;"></div>
+                <span class="bar-lbl">${Utils.esc(b.label)}</span>
+              </div>`;
+          }).join('')}
+        </div>`;
+    } catch (e) {
+      cont.innerHTML = '<div class="empty-state">No se pudo cargar el gráfico.</div>';
+    }
+  }
+
   async function renderHistorial() {
+    renderComisionesChart(comisionesPeriodo);
     const box = el('historial-stack');
     Utils.showLoading();
     try {
@@ -554,6 +581,10 @@ const ChoferScreen = (() => {
     el('historial-stack').addEventListener('click', (ev) => {
       const row = ev.target.closest('[data-action="ver-turno"]');
       if (row) verTurno(row.dataset.id);
+    });
+    el('comisiones-filter-row').addEventListener('click', (ev) => {
+      const btn = ev.target.closest('button[data-period]');
+      if (btn) renderComisionesChart(btn.dataset.period);
     });
 
     el('btn-cancelar-editar-monto').addEventListener('click', () => { Utils.closeModal('editar-monto-modal'); editando = null; });

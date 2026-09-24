@@ -19,6 +19,7 @@ use App\Models\Movil;
 use App\Models\Turno;
 use App\Models\Viaje;
 use App\Services\LiquidacionService;
+use DateTimeImmutable;
 
 final class TurnoController
 {
@@ -113,6 +114,54 @@ final class TurnoController
         }
 
         Response::json(['turnos' => $out]);
+    }
+
+    /**
+     * Serie para el gráfico "Mis comisiones" del historial: últimos 7 días,
+     * últimas 6 semanas o últimos 6 meses, según $periodo.
+     */
+    public function comisiones(): void
+    {
+        Auth::requireRole('chofer');
+        $chofer = $this->choferActual();
+        $periodo = (string) Request::query('periodo', 'semana');
+        $periodo = in_array($periodo, ['dia', 'semana', 'mes'], true) ? $periodo : 'semana';
+
+        $empresa = (new Empresa())->primera();
+        $liquidacion = new LiquidacionService(Database::connection());
+        $pct = $liquidacion->comisionPctDeChofer($chofer, $empresa);
+        $turnoModel = new Turno();
+
+        $hoy = new DateTimeImmutable('today');
+        $buckets = [];
+
+        if ($periodo === 'dia') {
+            for ($i = 6; $i >= 0; $i--) {
+                $dia = $hoy->modify("-{$i} days");
+                $ids = $turnoModel->deChoferEnRango((int) $chofer['id'], $dia->format('Y-m-d H:i:s'), $dia->modify('+1 day')->format('Y-m-d H:i:s'));
+                $calc = $liquidacion->calcularParaTurnos($ids, $pct);
+                $buckets[] = ['label' => $dia->format('d/m'), 'comision' => $calc['comision_chofer']];
+            }
+        } elseif ($periodo === 'semana') {
+            $inicioActual = $hoy->modify('monday this week');
+            for ($i = 5; $i >= 0; $i--) {
+                $inicio = $inicioActual->modify("-{$i} weeks");
+                $ids = $turnoModel->deChoferEnRango((int) $chofer['id'], $inicio->format('Y-m-d H:i:s'), $inicio->modify('+7 days')->format('Y-m-d H:i:s'));
+                $calc = $liquidacion->calcularParaTurnos($ids, $pct);
+                $buckets[] = ['label' => $inicio->format('d/m'), 'comision' => $calc['comision_chofer']];
+            }
+        } else {
+            $mesesEs = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            $inicioActual = $hoy->modify('first day of this month');
+            for ($i = 5; $i >= 0; $i--) {
+                $inicio = $inicioActual->modify("-{$i} months");
+                $ids = $turnoModel->deChoferEnRango((int) $chofer['id'], $inicio->format('Y-m-d H:i:s'), $inicio->modify('+1 month')->format('Y-m-d H:i:s'));
+                $calc = $liquidacion->calcularParaTurnos($ids, $pct);
+                $buckets[] = ['label' => $mesesEs[(int) $inicio->format('n') - 1], 'comision' => $calc['comision_chofer']];
+            }
+        }
+
+        Response::json(['periodo' => $periodo, 'buckets' => $buckets]);
     }
 
     public function ver(string $id): void

@@ -269,6 +269,52 @@ const DuenoScreen = (() => {
     }
   }
 
+  function agregarBurbujaChat(texto, rol) {
+    const row = document.createElement('div');
+    row.className = 'chat-bubble-row ' + rol;
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+    bubble.textContent = texto;
+    row.appendChild(bubble);
+    el('asistente-chat-messages').appendChild(row);
+    el('asistente-scroll-anchor').scrollIntoView({ behavior: 'smooth', block: 'end' });
+    return row;
+  }
+
+  function mostrarPensandoChat() {
+    const row = document.createElement('div');
+    row.className = 'chat-bubble-row assistant';
+    row.id = 'chat-pensando';
+    row.innerHTML = '<div class="chat-bubble"><div class="chat-thinking"><span></span><span></span><span></span></div></div>';
+    el('asistente-chat-messages').appendChild(row);
+    el('asistente-scroll-anchor').scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  async function enviarMensajeAsistente() {
+    const input = el('asistente-input');
+    const pregunta = input.value.trim();
+    if (!pregunta) return;
+
+    agregarBurbujaChat(pregunta, 'user');
+    input.value = '';
+    input.disabled = true;
+    el('asistente-send').disabled = true;
+    mostrarPensandoChat();
+
+    try {
+      const data = await Api.post('/asistente/chat', { pregunta });
+      document.getElementById('chat-pensando')?.remove();
+      agregarBurbujaChat(data.respuesta, 'assistant');
+    } catch (e) {
+      document.getElementById('chat-pensando')?.remove();
+      agregarBurbujaChat('No pude responder eso: ' + e.message, 'assistant');
+    } finally {
+      input.disabled = false;
+      el('asistente-send').disabled = false;
+      input.focus();
+    }
+  }
+
   async function renderPerfil() {
     Utils.showLoading();
     try {
@@ -430,11 +476,17 @@ const DuenoScreen = (() => {
         const titles = { 'dueno-view-choferes': 'Choferes', 'dueno-view-reportes': 'Reportes', 'dueno-view-asistente': 'Asistente', 'dueno-view-perfil': 'Perfil' };
         el('dueno-titulo').textContent = titles[view] || '';
         el('btn-export-reportes').style.display = view === 'dueno-view-reportes' ? 'flex' : 'none';
+        el('asistente-input-bar').style.display = view === 'dueno-view-asistente' ? 'flex' : 'none';
         if (view === 'dueno-view-choferes') renderChoferes();
         if (view === 'dueno-view-reportes') renderReportes();
         if (view === 'dueno-view-asistente') renderAsistente();
         if (view === 'dueno-view-perfil') renderPerfil();
       });
+    });
+
+    el('asistente-send').addEventListener('click', enviarMensajeAsistente);
+    el('asistente-input').addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') enviarMensajeAsistente();
     });
 
     el('choferes-stack').addEventListener('click', (ev) => {
