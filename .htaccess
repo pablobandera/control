@@ -1,0 +1,17 @@
+# Si este repo termina clonado dentro del document root de un hosting (ej.
+# `git clone` directo en public_html), esto bloquea el acceso HTTP a
+# cualquier archivo o carpeta oculta: .git, .gitignore, .env, etc.
+<IfModule mod_authz_core.c>
+  <FilesMatch "^\.">
+    Require all denied
+  </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+  <FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+  </FilesMatch>
+</IfModule>
+
+RewriteEngine On
+RewriteRule "(^|/)\." - [F]
