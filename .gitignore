@@ -5,6 +5,15 @@ backend/public/uploads/perfiles/*
 !backend/public/uploads/comprobantes/.gitkeep
 !backend/public/uploads/perfiles/.gitkeep
 
+# Herramientas de desarrollo local (MariaDB portable) - no va al repo
+local-dev/
+
+# Prototipos visuales (referencia local, no se sube)
+Demo/
+
+# Scripts de arranque local (rutas propias de esta PC, no se suben)
+*.bat
+
 # Sistema / editor
 .DS_Store
 Thumbs.db

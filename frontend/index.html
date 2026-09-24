@@ -19,17 +19,21 @@
 <div class="screen active" id="screen-login">
   <div class="content">
     <div class="login-top">
-      <div class="login-badge"><i class="ti ti-car"></i></div>
-      <h1 class="login-title">AppJuan</h1>
-      <p class="login-subtitle">Gestión de flota de taxis y remises.<br>Ingresá con tu usuario y contraseña.</p>
-      <form id="login-form">
-        <input class="modal-input" id="login-username" type="text" placeholder="Usuario" autocomplete="username" style="margin-bottom:12px;">
-        <input class="modal-input" id="login-password" type="password" placeholder="Contraseña" autocomplete="current-password">
-        <p class="modal-error" id="login-error">Usuario o contraseña incorrectos.</p>
-        <button type="submit" class="start-turno-btn" id="login-submit" style="width:100%; justify-content:center; margin-top:18px;">
-          <i class="ti ti-login-2"></i> Ingresar
-        </button>
-      </form>
+      <div class="login-brand">
+        <div class="login-badge"><i class="ti ti-car"></i></div>
+        <h1 class="login-title">AppJuan</h1>
+        <p class="login-subtitle">Gestión de flota de taxis y remises.<br>Ingresá con tu usuario y contraseña.</p>
+      </div>
+      <div class="login-actions">
+        <form id="login-form">
+          <input class="modal-input" id="login-username" type="text" placeholder="Usuario" autocomplete="username" style="margin-bottom:12px;">
+          <input class="modal-input" id="login-password" type="password" placeholder="Contraseña" autocomplete="current-password">
+          <p class="modal-error" id="login-error">Usuario o contraseña incorrectos.</p>
+          <button type="submit" class="start-turno-btn" id="login-submit" style="width:100%; justify-content:center; margin-top:18px;">
+            <i class="ti ti-login-2"></i> Ingresar
+          </button>
+        </form>
+      </div>
     </div>
     <p class="login-footer">AppJuan · Gestión de flota</p>
   </div>
@@ -245,10 +249,17 @@
     <!-- VISTA: REPORTES -->
     <div class="dueno-view" id="dueno-view-reportes">
       <p class="subtitle">Facturación y liquidación de la flota</p>
-      <div class="filter-row" id="reportes-filter-row">
-        <button data-period="dia" class="active">Día</button>
-        <button data-period="semana">Semana</button>
-        <button data-period="mes">Mes</button>
+      <div class="filter-row-wrap">
+        <div class="filter-row" id="reportes-filter-row">
+          <button data-period="dia" class="active">Día</button>
+          <button data-period="semana">Semana</button>
+          <button data-period="mes">Mes</button>
+        </div>
+        <div id="reportes-month-picker" class="month-picker">
+          <i class="ti ti-calendar" style="font-size:14px;"></i>
+          <select id="sel-reportes-month"></select>
+          <i class="ti ti-chevron-down" style="font-size:13px;"></i>
+        </div>
       </div>
       <div id="reportes-content"></div>
     </div>
@@ -262,17 +273,23 @@
     <!-- VISTA: PERFIL -->
     <div class="dueno-view" id="dueno-view-perfil">
       <p class="subtitle">Datos de tu flota</p>
-      <div id="empresa-perfil-card"></div>
-      <div class="flota-list-card">
-        <p class="flota-list-title">Choferes</p>
-        <div id="flota-list"></div>
-        <button class="btn-agregar-chofer" id="btn-agregar-chofer"><i class="ti ti-user-plus"></i> Agregar chofer</button>
+      <div id="dueno-perfil-wrap">
+        <div id="empresa-perfil-card"></div>
+        <div class="flota-list-card">
+          <p class="flota-list-title">Choferes</p>
+          <div id="flota-list"></div>
+          <button class="btn-agregar-chofer" id="btn-agregar-chofer"><i class="ti ti-user-plus"></i> Agregar chofer</button>
+        </div>
       </div>
     </div>
 
   </div>
 
   <div class="bottom-nav" id="dueno-nav">
+    <div class="sidebar-brand only-desktop">
+      <div class="sidebar-badge"><i class="ti ti-car"></i></div>
+      <div class="sidebar-txt"><p class="name">AppJuan</p><p class="role">Panel del dueño</p></div>
+    </div>
     <div class="nav-item active" data-view="dueno-view-choferes"><i class="ti ti-users"></i><span>Choferes</span></div>
     <div class="nav-item" data-view="dueno-view-reportes"><i class="ti ti-chart-bar"></i><span>Reportes</span></div>
     <div class="nav-item" data-view="dueno-view-asistente"><i class="ti ti-bulb"></i><span>Asistente</span></div>

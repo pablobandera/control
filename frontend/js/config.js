@@ -1,6 +1,9 @@
-// Configuración del frontend. Editá API_BASE según cómo despliegues el backend:
-//  - Si backend/public queda servido en /api del mismo dominio (recomendado): '/api'
-//  - Si la API vive en un subdominio propio: 'https://api.tudominio.com'
+// Configuración del frontend.
+// Dejá activa (sin //) solo la línea que corresponda, y comentá la otra.
 const CONFIG = {
-  API_BASE: '/api',
+  // ---- LOCALHOST (tu PC, con start-all.bat) — activa ----
+  API_BASE: 'http://localhost:8000',
+
+  // ---- PRODUCCIÓN (Hostinger) — comentada ----
+  // API_BASE: 'https://api.control.paulflag.com',
 };

@@ -1,10 +1,37 @@
 const DuenoScreen = (() => {
   let periodoActual = 'dia';
+  let mesSeleccionado = null; // 'YYYY-MM', solo aplica cuando periodoActual === 'mes'
   let eventsBound = false;
   let editandoChoferId = null;
   let choferFormFotoFile = null;
 
+  const MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
   function el(id) { return document.getElementById(id); }
+
+  function poblarSelectorMeses() {
+    const sel = el('sel-reportes-month');
+    if (!sel || sel.options.length) return;
+    const now = new Date();
+    let html = '';
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const nombreMes = MESES_ES[d.getMonth()];
+      const label = `${nombreMes.charAt(0).toUpperCase()}${nombreMes.slice(1)} ${d.getFullYear()}`;
+      html += `<option value="${key}">${label}</option>`;
+    }
+    sel.innerHTML = html;
+    mesSeleccionado = sel.value;
+  }
+
+  function reportesParams() {
+    const params = { periodo: periodoActual };
+    if (periodoActual === 'mes' && mesSeleccionado) {
+      params.fecha = `${mesSeleccionado}-15`;
+    }
+    return params;
+  }
 
   async function init() {
     bindEventsOnce();
@@ -104,11 +131,22 @@ const DuenoScreen = (() => {
   async function renderReportes() {
     Utils.showLoading();
     try {
-      const data = await Api.get('/reportes', { periodo: periodoActual });
+      const data = await Api.get('/reportes', reportesParams());
       const sumaTaxiUber = data.taxi_total + data.uber_total;
       const pctTaxi = sumaTaxiUber > 0 ? (data.taxi_total / sumaTaxiUber * 100) : 50;
+      const tituloPeriodo = periodoActual === 'dia' ? 'Hoy' : periodoActual === 'semana' ? 'Esta semana' : 'Este mes';
 
       el('reportes-content').innerHTML = `
+        <div class="chart-card liquidacion-flota-card only-desktop">
+          <p class="chart-title">Liquidación de la flota <span class="chart-sub">${tituloPeriodo}</span></p>
+          <div class="liquidacion-stats">
+            <div class="liquidacion-stat"><p class="lbl">Total bruto</p><p class="val">${Utils.money(data.total_bruto)}</p></div>
+            <div class="liquidacion-stat"><p class="lbl">Comisiones choferes (${data.comision_pct}%)</p><p class="val" style="color:#2fa85a;">-${Utils.money(data.comision_chofer)}</p></div>
+            <div class="liquidacion-stat"><p class="lbl">Gastos de la flota</p><p class="val" style="color:#e2544c;">-${Utils.money(data.gastos_total)}</p></div>
+            <div class="liquidacion-stat destacado"><p class="lbl">A rendir total</p><p class="val">${Utils.money(data.a_rendir)}</p></div>
+          </div>
+        </div>
+
         <div class="report-kpis">
           <div class="report-kpi"><p class="lbl">Total bruto</p><p class="val">${Utils.money(data.total_bruto)}</p></div>
           <div class="report-kpi"><p class="lbl">A rendir</p><p class="val">${Utils.money(data.a_rendir)}</p></div>
@@ -160,7 +198,8 @@ const DuenoScreen = (() => {
       el('card-service').addEventListener('click', abrirService);
 
       el('btn-export-reportes').style.display = 'flex';
-      el('btn-export-reportes').href = CONFIG.API_BASE + '/reportes/export?periodo=' + encodeURIComponent(periodoActual);
+      const exportParams = new URLSearchParams(reportesParams()).toString();
+      el('btn-export-reportes').href = CONFIG.API_BASE + '/reportes/export?' + exportParams;
     } catch (e) {
       Utils.toast(e.message, 'error');
     } finally {
@@ -171,7 +210,7 @@ const DuenoScreen = (() => {
   async function abrirComisiones() {
     Utils.showLoading();
     try {
-      const data = await Api.get('/reportes/comisiones', { periodo: periodoActual });
+      const data = await Api.get('/reportes/comisiones', reportesParams());
       el('comisiones-modal-body').innerHTML = data.comisiones.length
         ? data.comisiones.map((r) => `
           <div class="modal-list-row">
@@ -405,11 +444,18 @@ const DuenoScreen = (() => {
       card.querySelector('.card-detail')?.classList.toggle('open');
     });
 
+    poblarSelectorMeses();
+    el('sel-reportes-month').addEventListener('change', (ev) => {
+      mesSeleccionado = ev.target.value;
+      renderReportes();
+    });
+
     document.getElementById('reportes-filter-row').addEventListener('click', (ev) => {
       const btn = ev.target.closest('button[data-period]');
       if (!btn) return;
       periodoActual = btn.dataset.period;
       document.querySelectorAll('#reportes-filter-row button').forEach((b) => b.classList.toggle('active', b === btn));
+      el('reportes-month-picker').classList.toggle('open', periodoActual === 'mes');
       renderReportes();
     });
 

@@ -11,8 +11,7 @@ final class Auth
     public static function start(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
-            $https = (($_SERVER['HTTPS'] ?? '') !== '' && ($_SERVER['HTTPS'] ?? '') !== 'off')
-                || (($_SERVER['SERVER_PORT'] ?? '') === '443');
+            $https = self::requestIsHttps();
 
             session_set_cookie_params([
                 'lifetime' => 0,
@@ -81,6 +80,23 @@ final class Auth
             self::logout();
             Response::error('Tu cuenta fue desactivada.', 401);
         }
+    }
+
+    /**
+     * Detecta HTTPS incluso detrás de un proxy/balanceador (común en hostings
+     * compartidos), donde $_SERVER['HTTPS'] puede no llegar seteado aunque el
+     * visitante sí esté en HTTPS. Sin esto, la cookie de sesión podría no
+     * marcarse como "secure" en producción y el login fallar en el navegador.
+     */
+    private static function requestIsHttps(): bool
+    {
+        if ((($_SERVER['HTTPS'] ?? '') !== '') && ($_SERVER['HTTPS'] ?? '') !== 'off') {
+            return true;
+        }
+        if (($_SERVER['SERVER_PORT'] ?? '') === '443') {
+            return true;
+        }
+        return strtolower($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
     }
 
     /**
