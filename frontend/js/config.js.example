@@ -1,0 +1,14 @@
+// Copiá este archivo como "config.js" (en esta misma carpeta) en cada lugar
+// donde corras el proyecto (tu PC, el servidor). config.js NO se sube al
+// repositorio (ver .gitignore) — cada copia queda con su propia URL,
+// así un "git pull" nunca te pisa el valor de producción con el de tu PC,
+// ni al revés.
+//
+// Dejá activa (sin //) solo la línea que corresponda, y comentá la otra.
+const CONFIG = {
+  // ---- LOCALHOST (tu PC, con start-all.bat) ----
+  API_BASE: 'http://localhost:8000',
+
+  // ---- PRODUCCIÓN (Hostinger) ----
+  // API_BASE: 'https://api.control.paulflag.com',
+};

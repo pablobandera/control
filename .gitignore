@@ -1,5 +1,8 @@
 # Backend
 backend/.env
+
+# Frontend (config con la URL de la API: distinta en cada PC/servidor)
+frontend/js/config.js
 backend/public/uploads/comprobantes/*
 backend/public/uploads/perfiles/*
 !backend/public/uploads/comprobantes/.gitkeep
