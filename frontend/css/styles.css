@@ -361,6 +361,68 @@ html, body{
 .ranking-sub{ font-size:10.5px; color:#9a9a96; margin-top:2px; }
 .ranking-val{ font-size:13px; font-weight:700; color:#2fa85a; text-align:right; }
 
+/* ---- reportes: tarjeta oscura tipo grafico de linea (combustible, cta cte, comisiones, service) ---- */
+.combustible-dark-card{ background:#1c1c1c; border-radius:26px; padding:22px 20px 18px; }
+.dark-card-header{ display:flex; justify-content:space-between; align-items:center; }
+.dark-card-title{ font-family:'Poppins'; font-weight:600; font-size:15px; color:#fff; margin:0; }
+.dark-card-sub{ font-size:11px; color:#9a9a96; }
+.dark-chart-wrap{ position:relative; height:100px; margin:36px 0 4px; }
+.dark-line-svg{ width:100%; height:100%; display:block; overflow:visible; }
+.dark-tooltip{
+  position:absolute; transform:translate(-50%,-135%);
+  background:#fff; color:#1c1c1c; font-size:11px; font-weight:700; padding:6px 12px; border-radius:999px; white-space:nowrap;
+  box-shadow:0 4px 10px rgba(0,0,0,0.3);
+}
+.dark-chart-labels{ display:flex; justify-content:space-between; margin-top:6px; }
+.dark-chart-labels span{ font-size:10px; color:#7a7a76; flex:1; text-align:center; }
+.dark-chart-labels span.peak-lbl{ background:rgba(255,255,255,0.14); color:#fff; border-radius:999px; padding:3px 9px; font-weight:700; }
+
+/* ---- reportes: facturacion en efectivo/transferencia (capsulas tipo termometro) ---- */
+.progress-total{ font-family:'Poppins'; font-weight:700; font-size:26px; color:#1c1c1c; margin:0; }
+.progress-sub{ font-size:11px; color:#9a9a96; margin:4px 0 18px; }
+.capsule-row{ display:flex; gap:10px; justify-content:space-between; }
+.capsule-col{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+.capsule{
+  width:14px; height:100px; border-radius:999px; position:relative; overflow:hidden;
+  background-image: repeating-linear-gradient(-45deg, #d8d6cc 0 2px, transparent 2px 7px);
+  background-color: rgba(0,0,0,0.05);
+}
+.capsule-fill{ position:absolute; bottom:0; left:0; width:100%; background:#f3d24e; border-radius:999px; }
+.capsule-lbl{ font-size:9.5px; color:#9a9a96; }
+.progress-legend{ display:flex; gap:16px; justify-content:center; margin-top:16px; }
+.progress-legend span{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:#6b6b68; }
+.progress-legend .dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+/* ---- reportes: desglose taxi / uber (anillo) ---- */
+.ring-card{ text-align:center; }
+.ring-wrap{ position:relative; width:160px; height:160px; margin:6px auto 18px; }
+.ring{ width:100%; height:100%; border-radius:50%; }
+.ring-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.ring-center .amount{ font-family:'Poppins'; font-weight:700; font-size:18px; color:#1c1c1c; margin:0; }
+.ring-center .label{ font-size:10px; color:#9a9a96; margin:4px 0 0; }
+.ring-legend{ display:flex; gap:10px; justify-content:center; }
+.ring-chip{ flex:1; max-width:160px; background:rgba(0,0,0,0.03); border-radius:16px; padding:10px 12px; display:flex; align-items:center; gap:8px; text-align:left; }
+.ring-chip .dot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.ring-chip .txt .name{ font-size:10px; color:#9a9a96; margin:0; }
+.ring-chip .txt .val{ font-family:'Poppins'; font-weight:700; font-size:12.5px; color:#1c1c1c; margin:1px 0 0; }
+
+/* ---- reportes: descuentos (tarjeta naranja con linea ondulada) ---- */
+.descuentos-card{ background:#f2975a; }
+.descuentos-title{ font-family:'Poppins'; font-weight:600; font-size:15px; color:#1c1c1c; margin:0 0 4px; }
+.descuentos-chart-wrap{ position:relative; height:64px; margin:34px 0 4px; }
+.descuentos-line-svg{ width:100%; height:100%; display:block; overflow:visible; }
+.descuentos-chart-labels{ display:flex; justify-content:space-between; margin-top:6px; }
+.descuentos-chart-labels span{ font-size:10px; color:#7a4a1f; flex:1; text-align:center; }
+.descuentos-chart-labels span.peak-lbl{ background:#1c1c1c; color:#fff; border-radius:999px; padding:3px 9px; font-weight:700; }
+.descuentos-pct-row{ display:flex; align-items:baseline; gap:8px; margin-top:14px; }
+.descuentos-pct{ font-family:'Poppins'; font-weight:700; font-size:34px; color:#1c1c1c; }
+.descuentos-pct-label{ font-size:12.5px; color:#7a4a1f; }
+.descuentos-monto{ font-size:11.5px; color:#7a4a1f; margin:6px 0 0; }
+
+/* ---- reportes: tira de miniaturas de comprobantes ---- */
+.comprobantes-strip{ display:flex; gap:6px; margin:8px 0 0; }
+.comprobantes-strip .strip-thumb{ width:40px; height:40px; border-radius:8px; background:rgba(255,255,255,0.12); flex-shrink:0; object-fit:cover; }
+
 /* ---- barra simple de proporcion (taxi/uber, efvo/transf) ---- */
 .simple-seg-bar{ display:flex; height:12px; border-radius:6px; overflow:hidden; background:#eceae0; margin:6px 0 10px; }
 .simple-seg-bar .seg-a{ background:#f3d24e; }
@@ -619,41 +681,4 @@ html, body{
   #screen-login .login-title{ font-size:54px; }
   #screen-login .login-subtitle{ font-size:16px; margin-bottom:0; }
   #screen-login .login-footer{ margin-top:0; padding-bottom:36px; }
-
-  /* el chat del asistente tiene que centrarse respecto al contenido, no al viewport entero (hay sidebar) */
-  .chat-input-bar{ left:calc(236px + (100% - 236px) / 2); max-width:600px; }
 }
-
-/* ---- asistente: chat con datos reales ---- */
-#dueno-view-asistente{ padding-bottom:150px; }
-.chat-bubble-row{ display:flex; margin-bottom:10px; }
-.chat-bubble-row.user{ justify-content:flex-end; }
-.chat-bubble{ max-width:82%; padding:11px 15px; border-radius:18px; font-size:12.5px; line-height:1.5; }
-.chat-bubble-row.user .chat-bubble{ background:#1c1c1c; color:#fff; border-bottom-right-radius:5px; }
-.chat-bubble-row.assistant .chat-bubble{ background:#faf7ee; color:#3a3a37; border-bottom-left-radius:5px; box-shadow:0 4px 10px rgba(0,0,0,0.05); }
-.chat-thinking{ display:flex; align-items:center; gap:4px; padding:14px 16px; }
-.chat-thinking span{
-  width:6px; height:6px; border-radius:50%; background:#b5b0a0; display:inline-block;
-  animation: thinkingDot 1.2s ease-in-out infinite;
-}
-.chat-thinking span:nth-child(2){ animation-delay:0.2s; }
-.chat-thinking span:nth-child(3){ animation-delay:0.4s; }
-@keyframes thinkingDot{
-  0%, 60%, 100%{ opacity:0.3; transform:translateY(0); }
-  30%{ opacity:1; transform:translateY(-3px); }
-}
-.chat-input-bar{
-  position:fixed; left:50%; transform:translateX(-50%); bottom:72px;
-  width:calc(100% - 24px); max-width:456px;
-  background:#faf7ee; border-radius:999px; padding:6px 6px 6px 18px;
-  display:flex; align-items:center; gap:8px;
-  box-shadow:0 10px 24px rgba(0,0,0,0.15);
-  z-index:39;
-}
-.chat-input-bar input{ flex:1; border:none; background:transparent; font-size:16px; color:#1c1c1c; min-width:0; }
-.chat-input-bar input::placeholder{ color:#9a9a96; }
-.chat-input-bar button{
-  width:40px; height:40px; border-radius:50%; background:#1c1c1c; color:#f3d24e; border:none;
-  display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; font-size:16px;
-}
-.chat-input-bar button:disabled{ opacity:0.5; cursor:default; }

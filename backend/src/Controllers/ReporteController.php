@@ -35,6 +35,13 @@ final class ReporteController
         Response::json($data);
     }
 
+    public function serie(): void
+    {
+        Auth::requireRole('dueno');
+        $data = $this->servicio()->serieTemporal((int) Auth::empresaId(), $this->periodo());
+        Response::json($data);
+    }
+
     public function comisiones(): void
     {
         Auth::requireRole('dueno');

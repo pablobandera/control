@@ -57,10 +57,10 @@ $router->get('/reportes/export', [ReporteController::class, 'exportar']);
 $router->get('/reportes/comisiones', [ReporteController::class, 'comisiones']);
 $router->get('/reportes/services', [ReporteController::class, 'services']);
 $router->get('/reportes/comprobantes', [ReporteController::class, 'comprobantes']);
+$router->get('/reportes/serie', [ReporteController::class, 'serie']);
 $router->get('/reportes', [ReporteController::class, 'kpis']);
 
 $router->get('/asistente/informe', [AsistenteController::class, 'informe']);
-$router->post('/asistente/chat', [AsistenteController::class, 'chat']);
 
 $router->get('/empresa', [EmpresaController::class, 'ver']);
 $router->put('/empresa', [EmpresaController::class, 'actualizar']);

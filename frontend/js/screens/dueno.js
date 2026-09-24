@@ -33,6 +33,40 @@ const DuenoScreen = (() => {
     return params;
   }
 
+  function construirPuntos(valores, w, h, padX, padY) {
+    const n = valores.length;
+    const stepX = n > 1 ? (w - padX * 2) / (n - 1) : 0;
+    const max = Math.max(...valores, 0);
+    const min = Math.min(...valores, 0);
+    return valores.map((v, i) => {
+      const x = padX + i * stepX;
+      const norm = max === min ? 0.5 : (v - min) / (max - min);
+      const y = padY + (1 - norm) * (h - padY * 2);
+      return { x, y };
+    });
+  }
+
+  function pathSuave(pts) {
+    if (pts.length === 0) return '';
+    if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i];
+      const p1 = pts[i + 1];
+      const midX = (p0.x + p1.x) / 2;
+      d += ` C ${midX} ${p0.y}, ${midX} ${p1.y}, ${p1.x} ${p1.y}`;
+    }
+    return d;
+  }
+
+  function indiceMax(valores) {
+    let idx = 0;
+    for (let i = 1; i < valores.length; i++) {
+      if (valores[i] > valores[idx]) idx = i;
+    }
+    return idx;
+  }
+
   async function init() {
     bindEventsOnce();
     showView(document.getElementById('screen-dueno'), 'dueno-view-choferes', 'dueno-nav');
@@ -131,14 +165,64 @@ const DuenoScreen = (() => {
   async function renderReportes() {
     Utils.showLoading();
     try {
-      const data = await Api.get('/reportes', reportesParams());
-      const sumaTaxiUber = data.taxi_total + data.uber_total;
-      const pctTaxi = sumaTaxiUber > 0 ? (data.taxi_total / sumaTaxiUber * 100) : 50;
-      const tituloPeriodo = periodoActual === 'dia' ? 'Hoy' : periodoActual === 'semana' ? 'Esta semana' : 'Este mes';
+      const [data, serie] = await Promise.all([
+        Api.get('/reportes', reportesParams()),
+        Api.get('/reportes/serie', reportesParams()),
+      ]);
+
+      const categorias = serie.buckets.map((b) => b.label);
+      const tituloChart = periodoActual === 'dia' ? 'Recaudación por franja horaria' : periodoActual === 'semana' ? 'Recaudación por día' : 'Recaudación por semana';
+      const mejorChofer = data.ranking_choferes[0] ? data.ranking_choferes[0].nombre : '—';
+
+      // --- barras: recaudación total por bucket ---
+      const totales = serie.buckets.map((b) => b.total_bruto);
+      const maxTotal = Math.max(1, ...totales);
+      const peakIdx = indiceMax(totales);
+      const barsHtml = serie.buckets.map((b, i) => `
+        <div class="bar-col">
+          ${i === peakIdx && b.total_bruto > 0 ? `<div class="progress-tooltip">${Utils.money(b.total_bruto)}</div>` : ''}
+          <div class="bar${i === peakIdx ? ' peak' : ''}" style="height:${Math.max(2, Math.round(b.total_bruto / maxTotal * 100))}%;"></div>
+          <span class="bar-lbl">${Utils.esc(b.label)}</span>
+        </div>`).join('');
+
+      // --- combustible: linea suave ---
+      const combValores = serie.buckets.map((b) => b.combustible);
+      const combPts = construirPuntos(combValores, 300, 90, 10, 12);
+      const combPeakIdx = indiceMax(combValores);
+      const combPeak = combPts[combPeakIdx] || { x: 0, y: 0 };
+
+      // --- cuenta corriente: linea suave ---
+      const ccValores = serie.buckets.map((b) => b.cc_total);
+      const ccPts = construirPuntos(ccValores, 300, 90, 10, 12);
+      const ccPeakIdx = indiceMax(ccValores);
+      const ccPeak = ccPts[ccPeakIdx] || { x: 0, y: 0 };
+
+      // --- comisiones: linea suave (sin tooltip, solo tendencia) ---
+      const comValores = serie.buckets.map((b) => b.comision);
+      const comPts = construirPuntos(comValores, 300, 90, 10, 12);
+
+      // --- descuentos: linea suave ---
+      const descValores = serie.buckets.map((b) => b.descuentos);
+      const descPts = construirPuntos(descValores, 300, 60, 8, 8);
+      const descPeakIdx = indiceMax(descValores);
+      const descPeak = descPts[descPeakIdx] || { x: 0, y: 0 };
+
+      // --- facturación efectivo/transferencia: capsulas por bucket ---
+      const factValores = serie.buckets.map((b) => b.efvo + b.transf);
+      const maxFact = Math.max(1, ...factValores);
+      const capsulesHtml = serie.buckets.map((b) => `
+        <div class="capsule-col">
+          <div class="capsule"><div class="capsule-fill" style="height:${Math.max(2, Math.round((b.efvo + b.transf) / maxFact * 100))}%;"></div></div>
+          <span class="capsule-lbl">${Utils.esc(b.label)}</span>
+        </div>`).join('');
+
+      // --- taxi vs uber: anillo ---
+      const taxiUberTotal = data.taxi_total + data.uber_total;
+      const ringFillDeg = taxiUberTotal > 0 ? (data.taxi_total / taxiUberTotal) * 360 : 0;
 
       el('reportes-content').innerHTML = `
         <div class="chart-card liquidacion-flota-card only-desktop">
-          <p class="chart-title">Liquidación de la flota <span class="chart-sub">${tituloPeriodo}</span></p>
+          <p class="chart-title">Liquidación de la flota <span class="chart-sub">${Utils.esc(serie.titulo_total)}</span></p>
           <div class="liquidacion-stats">
             <div class="liquidacion-stat"><p class="lbl">Total bruto</p><p class="val">${Utils.money(data.total_bruto)}</p></div>
             <div class="liquidacion-stat"><p class="lbl">Comisiones choferes (${data.comision_pct}%)</p><p class="val" style="color:#2fa85a;">-${Utils.money(data.comision_chofer)}</p></div>
@@ -148,49 +232,128 @@ const DuenoScreen = (() => {
         </div>
 
         <div class="report-kpis">
-          <div class="report-kpi"><p class="lbl">Total bruto</p><p class="val">${Utils.money(data.total_bruto)}</p></div>
-          <div class="report-kpi"><p class="lbl">A rendir</p><p class="val">${Utils.money(data.a_rendir)}</p></div>
-          <div class="report-kpi"><p class="lbl">Comisiones</p><p class="val">${Utils.money(data.comision_chofer)}</p></div>
-          <div class="report-kpi"><p class="lbl">Gastos</p><p class="val">${Utils.money(data.gastos_total)}</p></div>
-          <div class="report-kpi"><p class="lbl">Cta cte pendiente</p><p class="val">${Utils.money(data.cc_pendiente)}</p></div>
-          <div class="report-kpi"><p class="lbl">Choferes activos</p><p class="val">${data.choferes_activos}/${data.choferes_total}</p></div>
+          <div class="report-kpi">
+            <p class="lbl">${Utils.esc(serie.titulo_total)}</p>
+            <p class="val">${Utils.money(data.total_bruto)}</p>
+            <p class="kpi-breakdown">Efvo ${Utils.money(data.ingreso_efvo)}<br>Transf ${Utils.money(data.ingreso_transf)}</p>
+          </div>
+          <div class="report-kpi"><p class="lbl">Promedio</p><p class="val">${Utils.money(serie.promedio)}</p></div>
+          <div class="report-kpi"><p class="lbl">Mejor chofer</p><p class="val" style="font-size:12px;">${Utils.esc(mejorChofer)}</p></div>
         </div>
 
         <div class="chart-card">
-          <p class="chart-title">Taxi vs Uber</p>
-          <div class="simple-seg-bar"><div class="seg-a" style="width:${pctTaxi}%;"></div><div class="seg-b" style="width:${100 - pctTaxi}%;"></div></div>
-          <div class="simple-seg-legend"><span>Taxi <b>${Utils.money(data.taxi_total)}</b></span><span>Uber <b>${Utils.money(data.uber_total)}</b></span></div>
-        </div>
-
-        <div class="chart-card">
-          <p class="chart-title">Efectivo vs Transferencia</p>
-          <div class="simple-seg-bar"><div class="seg-a" style="width:${data.total_bruto > 0 ? (100 - data.transferencia_pct) : 50}%;"></div><div class="seg-b" style="width:${data.transferencia_pct}%;"></div></div>
-          <div class="simple-seg-legend"><span>Efectivo <b>${Utils.money(data.ingreso_efvo)}</b></span><span>Transferencia <b>${Utils.money(data.ingreso_transf)}</b></span></div>
-        </div>
-
-        <div class="report-kpis">
-          <div class="report-kpi"><p class="lbl">Combustible</p><p class="val">${Utils.money(data.gastos_combustible)}</p><p class="lbl" style="margin-top:4px;">${Utils.pct(data.combustible_pct)}</p></div>
-          <div class="report-kpi"><p class="lbl">Descuentos</p><p class="val">${Utils.money(data.descuentos_total)}</p><p class="lbl" style="margin-top:4px;">${Utils.pct(data.descuentos_pct)}</p></div>
-          <div class="report-kpi"><p class="lbl">Cuenta corriente</p><p class="val">${Utils.money(data.cc_total)}</p><p class="lbl" style="margin-top:4px;">${Utils.pct(data.cc_pct)}</p></div>
+          <p class="chart-title">${Utils.esc(tituloChart)}</p>
+          <div class="bar-chart">${barsHtml}</div>
         </div>
 
         <div class="chart-card clickable" id="card-ranking">
-          <p class="chart-title">Facturación por chofer</p>
+          <p class="chart-title">Ranking de choferes</p>
           ${data.ranking_choferes.length ? data.ranking_choferes.map((r) => `
             <div class="ranking-row">
-              <div><p class="ranking-name">${Utils.esc(r.nombre)}</p><p class="ranking-sub">${r.viajes_count} viajes</p></div>
-              <p class="ranking-val">${Utils.money(r.total_bruto)}</p>
+              <span class="ranking-name">${Utils.esc(r.nombre)}</span>
+              <span class="ranking-val">${Utils.money(r.total_bruto)}</span>
             </div>`).join('') : '<div class="empty-state">Sin datos en este período.</div>'}
         </div>
 
-        <div class="chart-card clickable" id="card-comisiones">
-          <p class="chart-title">Comisiones por chofer <i class="ti ti-chevron-right"></i></p>
-          <p class="subtitle" style="margin:0;">Tocá para ver el detalle ordenado por comisión.</p>
+        <div class="chart-card combustible-dark-card">
+          <div class="dark-card-header">
+            <p class="dark-card-title">Combustible</p>
+            <span class="dark-card-sub">${Utils.esc(serie.titulo_total)}: ${Utils.money(data.gastos_combustible)}</span>
+          </div>
+          <div class="dark-chart-wrap">
+            <svg viewBox="0 0 300 90" class="dark-line-svg" preserveAspectRatio="none">
+              <path d="${pathSuave(combPts)}" fill="none" stroke="#f3d24e" stroke-width="2.5" stroke-linecap="round"/>
+              ${combValores[combPeakIdx] > 0 ? `<circle cx="${combPeak.x}" cy="${combPeak.y}" r="4.5" fill="#1c1c1c" stroke="#f3d24e" stroke-width="2.5"/>` : ''}
+            </svg>
+            ${combValores[combPeakIdx] > 0 ? `<div class="dark-tooltip" style="left:${(combPeak.x / 300 * 100).toFixed(1)}%; top:${(combPeak.y / 90 * 100).toFixed(1)}%;">${Utils.money(combValores[combPeakIdx])}</div>` : ''}
+          </div>
+          <div class="dark-chart-labels">${categorias.map((c, i) => `<span class="${i === combPeakIdx ? 'peak-lbl' : ''}">${Utils.esc(c)}</span>`).join('')}</div>
         </div>
 
-        <div class="chart-card clickable" id="card-service">
-          <p class="chart-title">Service por móvil <i class="ti ti-chevron-right"></i></p>
-          <p class="subtitle" style="margin:0;">Tocá para ver el historial de mantenimiento.</p>
+        <div class="chart-card">
+          <p class="chart-title">Facturación en efectivo y transferencias</p>
+          <p class="progress-total">${Utils.money(data.ingreso_efvo + data.ingreso_transf)}</p>
+          <p class="progress-sub">${Utils.esc(serie.titulo_total)}</p>
+          <div class="capsule-row">${capsulesHtml}</div>
+          <div class="progress-legend">
+            <span><span class="dot" style="background:#1c1c1c;"></span>Efectivo ${Utils.money(data.ingreso_efvo)}</span>
+            <span><span class="dot" style="background:#f3d24e;"></span>Transferencia ${Utils.money(data.ingreso_transf)}</span>
+          </div>
+        </div>
+
+        <div class="chart-card ring-card">
+          <p class="chart-title">Desglose Taxi / Uber</p>
+          <div class="ring-wrap">
+            <div class="ring" style="background: conic-gradient(from -90deg, #f3d24e 0deg ${ringFillDeg}deg, #1c1c1c ${ringFillDeg}deg 360deg); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 18px), #000 calc(100% - 18px)); mask: radial-gradient(farthest-side, transparent calc(100% - 18px), #000 calc(100% - 18px));"></div>
+            <div class="ring-center"><p class="amount">${Utils.money(taxiUberTotal)}</p><p class="label">Recaudación total</p></div>
+          </div>
+          <div class="ring-legend">
+            <div class="ring-chip"><span class="dot" style="background:#f3d24e;"></span><div class="txt"><p class="name">Taxi · ${data.taxi_count} viajes</p><p class="val">${Utils.money(data.taxi_total)}</p></div></div>
+            <div class="ring-chip"><span class="dot" style="background:#1c1c1c;"></span><div class="txt"><p class="name">Uber · ${data.uber_count} viajes</p><p class="val">${Utils.money(data.uber_total)}</p></div></div>
+          </div>
+        </div>
+
+        <div class="chart-card descuentos-card">
+          <p class="descuentos-title">Descuentos</p>
+          <div class="descuentos-chart-wrap">
+            <svg viewBox="0 0 300 60" class="descuentos-line-svg" preserveAspectRatio="none">
+              <path d="${pathSuave(descPts)}" fill="none" stroke="#1c1c1c" stroke-width="2.5" stroke-linecap="round"/>
+              ${descValores[descPeakIdx] > 0 ? `<circle cx="${descPeak.x}" cy="${descPeak.y}" r="4.5" fill="#1c1c1c" stroke="#fff" stroke-width="2.5"/>` : ''}
+            </svg>
+            ${descValores[descPeakIdx] > 0 ? `<div class="dark-tooltip" style="left:${(descPeak.x / 300 * 100).toFixed(1)}%; top:${(descPeak.y / 60 * 100).toFixed(1)}%;">${Utils.money(descValores[descPeakIdx])}</div>` : ''}
+          </div>
+          <div class="descuentos-chart-labels">${categorias.map((c, i) => `<span class="${i === descPeakIdx ? 'peak-lbl' : ''}">${Utils.esc(c)}</span>`).join('')}</div>
+          <div class="descuentos-pct-row">
+            <span class="descuentos-pct">${Utils.pct(data.descuentos_pct)}</span>
+            <span class="descuentos-pct-label">de la facturación ${serie.titulo_total.toLowerCase()}</span>
+          </div>
+          <p class="descuentos-monto">Total descontado por los choferes: ${Utils.money(data.descuentos_total)}</p>
+        </div>
+
+        <div class="chart-card combustible-dark-card">
+          <div class="dark-card-header">
+            <p class="dark-card-title">Cuenta corriente</p>
+            <span class="dark-card-sub">${Utils.esc(serie.titulo_total)}: ${Utils.money(data.cc_total)} (${Utils.pct(data.cc_pct)})</span>
+          </div>
+          <div class="dark-chart-wrap">
+            <svg viewBox="0 0 300 90" class="dark-line-svg" preserveAspectRatio="none">
+              <path d="${pathSuave(ccPts)}" fill="none" stroke="#6d8bff" stroke-width="2.5" stroke-linecap="round"/>
+              ${ccValores[ccPeakIdx] > 0 ? `<circle cx="${ccPeak.x}" cy="${ccPeak.y}" r="4.5" fill="#1c1c1c" stroke="#6d8bff" stroke-width="2.5"/>` : ''}
+            </svg>
+            ${ccValores[ccPeakIdx] > 0 ? `<div class="dark-tooltip" style="left:${(ccPeak.x / 300 * 100).toFixed(1)}%; top:${(ccPeak.y / 90 * 100).toFixed(1)}%;">${Utils.money(ccValores[ccPeakIdx])}</div>` : ''}
+          </div>
+          <div class="dark-chart-labels">${categorias.map((c, i) => `<span class="${i === ccPeakIdx ? 'peak-lbl' : ''}">${Utils.esc(c)}</span>`).join('')}</div>
+        </div>
+
+        <div class="chart-card combustible-dark-card clickable" id="card-comisiones">
+          <div class="dark-card-header">
+            <p class="dark-card-title">Comisiones</p>
+            <span class="dark-card-sub">${Utils.esc(serie.titulo_total)}</span>
+          </div>
+          <div class="dark-chart-wrap" style="margin:20px 0 4px;">
+            <svg viewBox="0 0 300 90" class="dark-line-svg" preserveAspectRatio="none">
+              <path d="${pathSuave(comPts)}" fill="none" stroke="#f3d24e" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <p style="font-size:24px; font-weight:500; color:#fff; margin:6px 0 0;">${Utils.money(data.comision_chofer)}</p>
+          <p style="font-size:11px; color:#9a9a96; margin:2px 0 0;">Total pagado a choferes · tocá para ver el detalle</p>
+        </div>
+
+        <div class="chart-card combustible-dark-card clickable" id="card-service">
+          <div class="dark-card-header">
+            <p class="dark-card-title">Service</p>
+            <span class="dark-card-sub">${Utils.esc(serie.titulo_total)}</span>
+          </div>
+          <p style="font-size:24px; font-weight:500; color:#fff; margin:16px 0 0;">${serie.service_count} service${serie.service_count === 1 ? '' : 's'} cargados</p>
+          <p style="font-size:11px; color:#9a9a96; margin:8px 0 0;">Tocá para ver el detalle por móvil</p>
+        </div>
+
+        <div class="chart-card combustible-dark-card">
+          <div class="dark-card-header">
+            <p class="dark-card-title">Comprobantes</p>
+            <span class="dark-card-sub">${Utils.esc(serie.titulo_total)}</span>
+          </div>
+          <p style="font-size:24px; font-weight:500; color:#fff; margin:12px 0 0;">${serie.comprobantes_count} foto${serie.comprobantes_count === 1 ? '' : 's'} cargadas</p>
         </div>
       `;
 
@@ -266,52 +429,6 @@ const DuenoScreen = (() => {
       Utils.toast(e.message, 'error');
     } finally {
       Utils.hideLoading();
-    }
-  }
-
-  function agregarBurbujaChat(texto, rol) {
-    const row = document.createElement('div');
-    row.className = 'chat-bubble-row ' + rol;
-    const bubble = document.createElement('div');
-    bubble.className = 'chat-bubble';
-    bubble.textContent = texto;
-    row.appendChild(bubble);
-    el('asistente-chat-messages').appendChild(row);
-    el('asistente-scroll-anchor').scrollIntoView({ behavior: 'smooth', block: 'end' });
-    return row;
-  }
-
-  function mostrarPensandoChat() {
-    const row = document.createElement('div');
-    row.className = 'chat-bubble-row assistant';
-    row.id = 'chat-pensando';
-    row.innerHTML = '<div class="chat-bubble"><div class="chat-thinking"><span></span><span></span><span></span></div></div>';
-    el('asistente-chat-messages').appendChild(row);
-    el('asistente-scroll-anchor').scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }
-
-  async function enviarMensajeAsistente() {
-    const input = el('asistente-input');
-    const pregunta = input.value.trim();
-    if (!pregunta) return;
-
-    agregarBurbujaChat(pregunta, 'user');
-    input.value = '';
-    input.disabled = true;
-    el('asistente-send').disabled = true;
-    mostrarPensandoChat();
-
-    try {
-      const data = await Api.post('/asistente/chat', { pregunta });
-      document.getElementById('chat-pensando')?.remove();
-      agregarBurbujaChat(data.respuesta, 'assistant');
-    } catch (e) {
-      document.getElementById('chat-pensando')?.remove();
-      agregarBurbujaChat('No pude responder eso: ' + e.message, 'assistant');
-    } finally {
-      input.disabled = false;
-      el('asistente-send').disabled = false;
-      input.focus();
     }
   }
 
@@ -476,17 +593,11 @@ const DuenoScreen = (() => {
         const titles = { 'dueno-view-choferes': 'Choferes', 'dueno-view-reportes': 'Reportes', 'dueno-view-asistente': 'Asistente', 'dueno-view-perfil': 'Perfil' };
         el('dueno-titulo').textContent = titles[view] || '';
         el('btn-export-reportes').style.display = view === 'dueno-view-reportes' ? 'flex' : 'none';
-        el('asistente-input-bar').style.display = view === 'dueno-view-asistente' ? 'flex' : 'none';
         if (view === 'dueno-view-choferes') renderChoferes();
         if (view === 'dueno-view-reportes') renderReportes();
         if (view === 'dueno-view-asistente') renderAsistente();
         if (view === 'dueno-view-perfil') renderPerfil();
       });
-    });
-
-    el('asistente-send').addEventListener('click', enviarMensajeAsistente);
-    el('asistente-input').addEventListener('keydown', (ev) => {
-      if (ev.key === 'Enter') enviarMensajeAsistente();
     });
 
     el('choferes-stack').addEventListener('click', (ev) => {

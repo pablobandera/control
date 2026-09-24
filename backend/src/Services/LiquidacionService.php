@@ -51,20 +51,26 @@ final class LiquidacionService
         $stmt->execute($turnoIds);
 
         $taxiEfvo = $taxiTransf = $uberEfvo = $uberTransf = 0.0;
+        $taxiCount = $uberCount = 0;
         $descuentoViajes = 0.0;
         $viajesCount = 0;
         foreach ($stmt->fetchAll() as $fila) {
             $neto = (float) $fila['neto'];
+            $cantidad = (int) $fila['cantidad'];
             $descuentoViajes += (float) $fila['descuentos'];
-            $viajesCount += (int) $fila['cantidad'];
+            $viajesCount += $cantidad;
             if ($fila['tipo'] === 'Taxi' && $fila['medio'] === 'Efectivo') {
                 $taxiEfvo += $neto;
+                $taxiCount += $cantidad;
             } elseif ($fila['tipo'] === 'Taxi' && $fila['medio'] === 'Transferencia') {
                 $taxiTransf += $neto;
+                $taxiCount += $cantidad;
             } elseif ($fila['tipo'] === 'Uber' && $fila['medio'] === 'Efectivo') {
                 $uberEfvo += $neto;
+                $uberCount += $cantidad;
             } elseif ($fila['tipo'] === 'Uber' && $fila['medio'] === 'Transferencia') {
                 $uberTransf += $neto;
+                $uberCount += $cantidad;
             }
         }
 
@@ -105,9 +111,11 @@ final class LiquidacionService
             'taxi_efvo' => round($taxiEfvo, 2),
             'taxi_transf' => round($taxiTransf, 2),
             'taxi_total' => round($taxiEfvo + $taxiTransf, 2),
+            'taxi_count' => $taxiCount,
             'uber_efvo' => round($uberEfvo, 2),
             'uber_transf' => round($uberTransf, 2),
             'uber_total' => round($uberEfvo + $uberTransf, 2),
+            'uber_count' => $uberCount,
             'ingreso_efvo' => round($ingresoEfvo, 2),
             'ingreso_transf' => round($ingresoTransf, 2),
             'viajes_count' => $viajesCount,
@@ -134,8 +142,8 @@ final class LiquidacionService
     private function estructuraVacia(float $comisionPct): array
     {
         return [
-            'taxi_efvo' => 0.0, 'taxi_transf' => 0.0, 'taxi_total' => 0.0,
-            'uber_efvo' => 0.0, 'uber_transf' => 0.0, 'uber_total' => 0.0,
+            'taxi_efvo' => 0.0, 'taxi_transf' => 0.0, 'taxi_total' => 0.0, 'taxi_count' => 0,
+            'uber_efvo' => 0.0, 'uber_transf' => 0.0, 'uber_total' => 0.0, 'uber_count' => 0,
             'ingreso_efvo' => 0.0, 'ingreso_transf' => 0.0, 'viajes_count' => 0,
             'cc_total' => 0.0, 'cc_pendiente' => 0.0, 'cc_cobrado' => 0.0, 'cc_count' => 0,
             'gastos_total' => 0.0, 'gastos_combustible' => 0.0, 'gastos_count' => 0,
