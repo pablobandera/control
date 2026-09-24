@@ -1,3 +1,8 @@
+# Nadie debe poder listar las fotos subidas navegando la carpeta (son
+# comprobantes y fotos de perfil); solo se puede acceder a un archivo si
+# ya se sabe su nombre exacto.
+Options -Indexes
+
 # Los archivos subidos son imágenes; nunca deben ejecutarse como PHP.
 <IfModule mod_authz_core.c>
   <FilesMatch "\.(php|phtml|php\d)$">

@@ -1,3 +1,5 @@
+Options -Indexes
+
 RewriteEngine On
 
 # Si el archivo/carpeta pedido existe de verdad (ej. uploads/foto.jpg), servilo tal cual.
